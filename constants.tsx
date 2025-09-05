@@ -2,13 +2,14 @@ import React from 'react';
 import { ConversationStep, UserType, ContextView, Supplier } from './types';
 import { AgentTaskView } from './components/AgentTaskView';
 import { DeepThinkingAnimation } from './components/DeepThinkingAnimation';
+import { PreparingQuestionsAnimation } from './components/PreparingQuestionsAnimation';
 
 export const USER_PROFILE_IMAGE_URL = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
 
 export const QUALIFIED_SUPPLIERS: Supplier[] = [
-    { name: "Maitri", type: "Internal", score: 92, status: "Onboarded" },
-    { name: "Nestle", type: "New", score: 88, status: "Requires Onboarding" },
-    { name: "Cadbury", type: "New", score: 85, status: "Requires Onboarding" },
+    { name: "Apex Manufacturing", type: "Internal", score: 92, status: "Onboarded" },
+    { name: "Global Toy Crafters", type: "New", score: 88, status: "Requires Onboarding" },
+    { name: "Precision Plastics Inc.", type: "New", score: 85, status: "Requires Onboarding" },
     { name: "Supplier D", type: "Marketplace", score: 81, status: "Requires Onboarding" },
     { name: "Supplier E", type: "Internal", score: 79, status: "Onboarded" },
     { name: "Supplier F", type: "Marketplace", score: 75, status: "Requires Onboarding" },
@@ -29,15 +30,15 @@ export const COMPARISON_FEATURES = [
 ];
 
 export const SUPPLIER_COMPARISON_DATA: Record<string, Record<string, string>> = {
-  'Maitri': {
+  'Apex Manufacturing': {
     'Price/Unit': '$8.20', 'Price @ 5k+': '$8.20', 'Capacity/Month': '30k', 'Compliance': 'Verified',
     'Phthalate-Free': 'Verified', 'Defect Rate': '<2%', 'Customization': 'Limited', 'Logistics': 'FOB HK', 'Audits': 'N/A',
   },
-  'Nestle': {
+  'Global Toy Crafters': {
     'Price/Unit': '$7.90', 'Price @ 5k+': '$7.50', 'Capacity/Month': '20k', 'Compliance': 'Claimed',
     'Phthalate-Free': 'Verified', 'Defect Rate': '<1%', 'Customization': 'Yes (PMS)', 'Logistics': 'FOB HK', 'Audits': 'N/A',
   },
-  'Cadbury': {
+  'Precision Plastics Inc.': {
     'Price/Unit': 'Pending', 'Price @ 5k+': 'Pending', 'Capacity/Month': '15k', 'Compliance': 'Partial',
     'Phthalate-Free': 'Pending', 'Defect Rate': 'N/A', 'Customization': 'N/A', 'Logistics': 'FOB Ningbo', 'Audits': 'ISO, SMETA',
   },
@@ -163,6 +164,7 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
     thinkingTime: 1000,
     autoContinue: false,
     awaitsCompletion: true,
+    isThinkingMessage: true,
   },
   {
     speaker: UserType.AGENT,
@@ -170,6 +172,7 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
     thinkingTime: 500,
     autoContinue: false,
     awaitsCompletion: true,
+    isThinkingMessage: true,
   },
   {
     speaker: UserType.AGENT,
@@ -238,9 +241,9 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
         <div>
             <p>Responses are starting to come in:</p>
             <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
-                <li><span className="font-semibold">Maitri →</span> onboarded, 30k/month, $8.20/unit, compliance verified.</li>
-                <li><span className="font-semibold">Nestle →</span> ASTM/EN71 claimed, ABS lead/phthalate-free, 20k/month, recyclable packaging, $7.90/unit.</li>
-                <li><span className="font-semibold">Cadbury →</span> EN71 provided, ABS lead-free (phthalate pending), ISO 9001, SMETA, FOB Ningbo (18–22 days), price not yet given.</li>
+                <li><span className="font-semibold">Apex Manufacturing →</span> onboarded, 30k/month, $8.20/unit, compliance verified.</li>
+                <li><span className="font-semibold">Global Toy Crafters →</span> ASTM/EN71 claimed, ABS lead/phthalate-free, 20k/month, recyclable packaging, $7.90/unit.</li>
+                <li><span className="font-semibold">Precision Plastics Inc. →</span> EN71 provided, ABS lead-free (phthalate pending), ISO 9001, SMETA, FOB Ningbo (18–22 days), price not yet given.</li>
             </ul>
         </div>
     ),
@@ -249,12 +252,57 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
   },
   {
     speaker: UserType.AGENT,
-    text: "Great. Please type your question for a specific supplier (e.g., 'To Cadbury: Do you support customized PMS, costs?').",
+    text: <PreparingQuestionsAnimation />,
+    thinkingTime: 500,
+    autoContinue: false,
+    awaitsCompletion: true,
+    isThinkingMessage: true,
+  },
+  {
+    speaker: UserType.AGENT,
+    text: (
+        <div>
+            <p>I've prepared a few standard follow-up questions based on the missing information. Should I send these?</p>
+            <ul className="list-disc list-inside ml-2 mt-2 bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
+                <li>Pricing for 5,000 units + volume discounts?</li>
+                <li>Quality control & certifications?</li>
+                <li>Sustainability practices?</li>
+                <li>Ethics: labor, wages, safety?</li>
+            </ul>
+        </div>
+    ),
+    options: ["Yes, send them.", "Draft my own instead."],
+    thinkingTime: 1000,
+  },
+  {
+      speaker: UserType.AGENT,
+      text: "Okay, sending the questions now. This might take a moment while I gather the responses.",
+      thinkingTime: 800,
+      waitingTime: 3000,
+      autoContinue: true,
+  },
+  {
+      speaker: UserType.AGENT,
+      text: (
+          <div>
+              <p>Got it. Here are the updated responses:</p>
+              <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
+                  <li><span className="font-semibold">Global Toy Crafters →</span> Pricing at 5k units is $7.50/unit. QC docs available. Uses recycled ABS. SMETA audited.</li>
+                  <li><span className="font-semibold">Precision Plastics Inc. →</span> Confirms phthalate-free. QC docs pending. ISO 14001 certified. BSCI audited.</li>
+              </ul>
+          </div>
+      ),
+      autoContinue: true,
+      thinkingTime: 500,
+  },
+  {
+    speaker: UserType.AGENT,
+    text: "Is there anything else you'd like to ask? Please type your question for a specific supplier (e.g., 'To Precision Plastics Inc.: Do you support customized PMS, costs?').",
     thinkingTime: 800,
   },
   {
     speaker: UserType.AGENT,
-    text: "Cadbury confirms PMS customization, no added cost, MOQ unchanged.",
+    text: "Precision Plastics Inc. confirms PMS customization, no added cost, MOQ unchanged.",
     options: ["Ask more", "Show the comparison."],
     thinkingTime: 1200,
   },
@@ -272,27 +320,28 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
         <div>
             <p>Here’s my evaluation:</p>
             <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
-                <li><span className="font-semibold">Maitri — 84/100:</span> Strong compliance, high capacity, predictable. Weakness: higher price.</li>
-                <li><span className="font-semibold">Nestle — 81/100:</span> Best pricing, &lt;1% defect, recyclable packaging, PMS customization. Weakness: missing phthalate cert.</li>
-                <li><span className="font-semibold">Cadbury — 77/100:</span> Good audits/logistics, ethical. Weakness: incomplete compliance, no price yet.</li>
+                <li><span className="font-semibold">Apex Manufacturing — 84/100:</span> Strong compliance, high capacity, predictable. Weakness: higher price.</li>
+                <li><span className="font-semibold">Global Toy Crafters — 81/100:</span> Best pricing, &lt;1% defect, recyclable packaging, PMS customization. Weakness: missing phthalate cert.</li>
+                <li><span className="font-semibold">Precision Plastics Inc. — 77/100:</span> Good audits/logistics, ethical. Weakness: incomplete compliance, no price yet.</li>
             </ul>
+            <p className="mt-2">Please select a primary and a backup supplier below, then confirm.</p>
         </div>
     ),
-    options: ["Proceed with A, keep B as backup."],
     thinkingTime: 1400,
+    isSupplierSelection: true,
   },
   {
     speaker: UserType.AGENT,
-    text: "Noted ✅. Locking A as primary, flagging B as conditional. Preparing PO draft…",
+    text: ({ primary, backup }) => `Noted ✅. Locking ${primary} as primary${backup ? `, flagging ${backup} as conditional` : ''}. Preparing PO draft…`,
     thinkingTime: 2000,
     autoContinue: true,
   },
   // Step 7
   {
     speaker: UserType.AGENT,
-    text: (
+    text: ({ primary }) => (
         <div>
-            <p>Draft PO for Maitri:</p>
+            <p>Draft PO for {primary}:</p>
             <ul className="list-none ml-2 mt-1 space-y-1">
                 <li><span className="font-semibold w-28 inline-block">Product:</span> STEM Educational Toy Kit</li>
                 <li><span className="font-semibold w-28 inline-block">Qty:</span> 1,500 units</li>

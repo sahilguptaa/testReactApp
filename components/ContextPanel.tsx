@@ -14,6 +14,7 @@ interface ContextPanelProps {
   selectedSuppliers: Set<string>;
   onToggleSupplier: (supplierName: string) => void;
   supplierStatuses: Record<string, string>;
+  primarySupplier: string | null;
 }
 
 const viewMap: Record<ContextView, React.ComponentType<any>> = {
@@ -26,7 +27,7 @@ const viewMap: Record<ContextView, React.ComponentType<any>> = {
   [ContextView.PO_SUMMARY]: POSummary,
 };
 
-export const ContextPanel: React.FC<ContextPanelProps> = ({ view, selectedSuppliers, onToggleSupplier, supplierStatuses }) => {
+export const ContextPanel: React.FC<ContextPanelProps> = ({ view, selectedSuppliers, onToggleSupplier, supplierStatuses, primarySupplier }) => {
   const CurrentView = viewMap[view] || InitialView;
 
   const viewProps: any = {};
@@ -40,6 +41,8 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ view, selectedSuppli
     viewProps.supplierStatuses = supplierStatuses;
   } else if (view === ContextView.SUPPLIER_COMPARISON) {
     viewProps.shortlistedSuppliers = selectedSuppliers;
+  } else if (view === ContextView.PO_SUMMARY) {
+    viewProps.primarySupplier = primarySupplier;
   }
 
   return (

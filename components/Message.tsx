@@ -5,10 +5,12 @@ import { USER_PROFILE_IMAGE_URL } from '../constants';
 interface MessageProps {
   user: UserType;
   text: React.ReactNode;
+  isThinkingMessage?: boolean;
 }
 
-export const Message: React.FC<MessageProps> = ({ user, text }) => {
+export const Message: React.FC<MessageProps> = ({ user, text, isThinkingMessage }) => {
   const isAgent = user === UserType.AGENT;
+  const isThinking = isAgent && isThinkingMessage;
 
   return (
     <div className={`flex items-end gap-3 ${isAgent ? 'justify-start' : 'justify-end'}`}>
@@ -33,10 +35,12 @@ export const Message: React.FC<MessageProps> = ({ user, text }) => {
         </div>
       )}
       <div
-        className={`px-4 py-3 rounded-2xl max-w-lg shadow-sm text-sm ${
+        className={`px-4 py-3 rounded-2xl max-w-lg text-sm ${
           isAgent
             ? 'bg-gray-100 text-slate-800 rounded-bl-none'
             : 'bg-walmart-blue text-white rounded-br-none'
+        } ${
+          isThinking ? 'border border-dashed border-slate-300' : 'shadow-sm'
         }`}
       >
         {text}

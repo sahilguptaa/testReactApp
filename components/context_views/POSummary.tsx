@@ -15,10 +15,14 @@ const SummaryItem: React.FC<{ label: string, value: string | number }> = ({ labe
     </div>
 );
 
-export const POSummary: React.FC = () => {
+interface POSummaryProps {
+    primarySupplier: string | null;
+}
+
+export const POSummary: React.FC<POSummaryProps> = ({ primarySupplier }) => {
   return (
     <div>
-      <PanelHeader title="Purchase Order Draft" subtitle="PO #GTI-2024-1138 for Supplier A" />
+      <PanelHeader title="Purchase Order Draft" subtitle={`PO #GTI-2024-1138 for ${primarySupplier || 'selected supplier'}`} />
       <div className="p-6">
         <div className="bg-slate-50 p-4 rounded-lg">
             <h3 className="font-semibold text-slate-900">PO Details</h3>

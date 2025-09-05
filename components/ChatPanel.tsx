@@ -15,9 +15,19 @@ interface ChatPanelProps {
   onUserResponse: (option: string) => void;
   showImageUpload: boolean;
   onImageUploadClick: () => void;
+  showSupplierSelectionUI: boolean;
+  shortlistedSuppliers: string[];
+  primarySupplier: string | null;
+  backupSupplier: string | null;
+  onSetPrimarySupplier: (name: string) => void;
+  onSetBackupSupplier: (name: string) => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isAgentThinking, isAgentWaiting, isAgentSending, userOptions, onUserResponse, showImageUpload, onImageUploadClick }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ 
+    messages, isAgentThinking, isAgentWaiting, isAgentSending, userOptions, onUserResponse, 
+    showImageUpload, onImageUploadClick, showSupplierSelectionUI, shortlistedSuppliers,
+    primarySupplier, backupSupplier, onSetPrimarySupplier, onSetBackupSupplier
+}) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -56,7 +66,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isAgentThinking,
       <div className="flex-grow p-6 overflow-y-auto bg-white">
         <div className="flex flex-col space-y-4">
           {messages.map((msg) => (
-            <Message key={msg.id} user={msg.user} text={msg.text} />
+            <Message key={msg.id} user={msg.user} text={msg.text} isThinkingMessage={msg.isThinkingMessage} />
           ))}
           {isAgentThinking && <ThinkingIndicator />}
           {isAgentWaiting && <WaitingIndicator />}
@@ -72,6 +82,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ messages, isAgentThinking,
         showImageUpload={showImageUpload}
         onImageUploadClick={onImageUploadClick}
         isAgentThinking={isAgentThinking || isAgentWaiting || isAgentSending}
+        showSupplierSelectionUI={showSupplierSelectionUI}
+        shortlistedSuppliers={shortlistedSuppliers}
+        primarySupplier={primarySupplier}
+        backupSupplier={backupSupplier}
+        onSetPrimarySupplier={onSetPrimarySupplier}
+        onSetBackupSupplier={onSetBackupSupplier}
       />
     </div>
   );

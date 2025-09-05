@@ -7,6 +7,7 @@ export interface Message {
   id: number;
   user: UserType;
   text: React.ReactNode;
+  isThinkingMessage?: boolean;
 }
 
 export enum ContextView {
@@ -26,14 +27,21 @@ export interface Supplier {
   status: string;
 }
 
+export interface SupplierSelectionState {
+  primary: string | null;
+  backup: string | null;
+}
+
 export interface ConversationStep {
   speaker: UserType;
-  text: React.ReactNode;
+  text: React.ReactNode | ((selection: SupplierSelectionState) => React.ReactNode);
   options?: string[];
   thinkingTime?: number;
   waitingTime?: number;
   contextView?: ContextView;
   isImageUpload?: boolean;
   autoContinue?: boolean;
+  isThinkingMessage?: boolean;
   awaitsCompletion?: boolean;
+  isSupplierSelection?: boolean;
 }
