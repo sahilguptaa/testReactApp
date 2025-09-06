@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
 const THINKING_STEPS = [
-  'Initializing secure connection...',
-  'Loading sourcing protocols...',
-  'Analyzing intake form parameters...',
-  'Calibrating matching algorithms...',
-  'Compiling multi-source query...',
-  'Preparing data consolidation...',
+'Getting ready to start your search...',
+ 'Making a secure connection...',
+ 'Loading sourcing options...',
+ 'Reviewing your request details...',
+ 'Finding the best matching suppliers...',
+ 'Gathering information from multiple sources...',
+ 'Bringing everything together...',
+ 'Starting supplier search...',
 ];
 
 export const DeepThinkingAnimation: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {

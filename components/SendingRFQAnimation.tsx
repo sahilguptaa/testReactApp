@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-const PREPARING_STEPS = [
-  'Analyzing response gaps...',
-  'Cross-referencing with compliance checklist...',
-  'Formulating targeted questions...',
-  'Drafting follow-ups for each supplier...',
+const SENDING_STEPS = [
+  'Packaging RFQ documents...',
+  'Dispatching to Brainy Builder Toys...'
 ];
 
-export const PreparingQuestionsAnimation: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
+export const SendingRFQAnimation: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    if (currentStep >= PREPARING_STEPS.length) {
+    const totalDuration = 4000;
+    const stepDuration = totalDuration / SENDING_STEPS.length;
+    
+    if (currentStep >= SENDING_STEPS.length) {
       if (onComplete) {
         const timer = setTimeout(onComplete, 500);
         return () => clearTimeout(timer);
@@ -21,16 +22,16 @@ export const PreparingQuestionsAnimation: React.FC<{ onComplete?: () => void }> 
 
     const timer = setTimeout(() => {
       setCurrentStep(c => c + 1);
-    }, 500); // Animation speed per step
+    }, stepDuration);
 
     return () => clearTimeout(timer);
   }, [currentStep, onComplete]);
 
   return (
     <div>
-      <p className="font-medium mb-3">Preparing follow-up questions based on current data...</p>
+      <p className="font-medium mb-3">Sending RFQ to suppliers...</p>
       <div className="space-y-2">
-        {PREPARING_STEPS.map((step, index) => (
+        {SENDING_STEPS.map((step, index) => (
           <div key={index} className="flex items-center text-sm">
             {index < currentStep ? (
               <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

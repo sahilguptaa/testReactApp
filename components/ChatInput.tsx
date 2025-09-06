@@ -6,86 +6,25 @@ interface ChatInputProps {
   showImageUpload: boolean;
   onImageUploadClick: () => void;
   isAgentThinking: boolean;
-  showSupplierSelectionUI: boolean;
-  shortlistedSuppliers: string[];
-  primarySupplier: string | null;
-  backupSupplier: string | null;
-  onSetPrimarySupplier: (name: string) => void;
-  onSetBackupSupplier: (name: string) => void;
 }
 
-const SupplierSelectionUI: React.FC<Omit<ChatInputProps, 'suggestions' | 'isAgentThinking' | 'showImageUpload' | 'onImageUploadClick'>> = ({
-  onSendMessage, showSupplierSelectionUI, shortlistedSuppliers, primarySupplier, backupSupplier, onSetPrimarySupplier, onSetBackupSupplier
-}) => {
-  return (
-    <div 
-        className="flex flex-col gap-3 mb-3"
-        style={{ visibility: showSupplierSelectionUI ? 'visible' : 'hidden', height: showSupplierSelectionUI ? 'auto' : 0 }}
-        aria-hidden={!showSupplierSelectionUI}
-    >
-      <div>
-        <h4 className="text-sm font-semibold text-slate-600 mb-2">Primary Supplier</h4>
-        <div className="flex flex-wrap gap-2">
-            {shortlistedSuppliers.map(supplier => (
-                <button
-                    key={`${supplier}-primary`}
-                    onClick={() => onSetPrimarySupplier(supplier)}
-                    className={`px-3 py-1 text-sm font-medium rounded-full transition ${
-                        primarySupplier === supplier
-                            ? 'bg-walmart-blue text-white ring-2 ring-offset-1 ring-walmart-blue'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
-                >
-                    {supplier}
-                </button>
-            ))}
-        </div>
-      </div>
-       <div>
-        <h4 className="text-sm font-semibold text-slate-600 mb-2">Backup Supplier (Optional)</h4>
-        <div className="flex flex-wrap gap-2">
-            {shortlistedSuppliers.map(supplier => (
-                <button
-                    key={`${supplier}-backup`}
-                    onClick={() => onSetBackupSupplier(supplier)}
-                    disabled={supplier === primarySupplier}
-                    className={`px-3 py-1 text-sm font-medium rounded-full transition ${
-                        backupSupplier === supplier
-                            ? 'bg-sky-600 text-white ring-2 ring-offset-1 ring-sky-500'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    } disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed`}
-                >
-                    {supplier}
-                </button>
-            ))}
-        </div>
-      </div>
-      <button
-        onClick={() => onSendMessage('Confirm Selection')}
-        disabled={!primarySupplier}
-        className="w-full mt-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-full hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition disabled:bg-slate-300 disabled:cursor-not-allowed"
-      >
-        Confirm Selection
-      </button>
-    </div>
-  );
-};
-
-
-export const ChatInput: React.FC<ChatInputProps> = ({ 
-    suggestions, onSendMessage, showImageUpload, onImageUploadClick, isAgentThinking,
-    showSupplierSelectionUI, shortlistedSuppliers, primarySupplier, backupSupplier, onSetPrimarySupplier, onSetBackupSupplier
-}) => {
+export const ChatInput: React.FC<ChatInputProps> = ({ suggestions, onSendMessage, showImageUpload, onImageUploadClick, isAgentThinking }) => {
   const [inputValue, setInputValue] = useState('');
+  
+  // This state holds the suggestions we want to render, even when they are hidden, to prevent layout shifts.
   const [renderedSuggestions, setRenderedSuggestions] = useState({ suggestions, showImageUpload });
   
   const inputRef = useRef<HTMLInputElement>(null);
+  // FIX: Provide an initial value to useRef. `useRef<T>()` requires an argument.
+  // `undefined` is the correct initial value to track the previous state, which doesn't exist on first render.
   const prevIsAgentThinking = useRef<boolean | undefined>(undefined);
 
-  const isInputDisabled = isAgentThinking || showSupplierSelectionUI;
-  const areSuggestionsCurrentlyVisible = (suggestions.length > 0 || showImageUpload) && !isAgentThinking && !showSupplierSelectionUI;
-  const showSendButton = inputValue.trim() !== '' && !showSupplierSelectionUI;
+  const isInputDisabled = isAgentThinking;
+  const areSuggestionsCurrentlyVisible = (suggestions.length > 0 || showImageUpload) && !isAgentThinking;
+  const showSendButton = inputValue.trim() !== '';
 
+  // We only update the suggestions to be rendered when new, visible suggestions arrive.
+  // This way, when the current suggestions are cleared, we keep rendering the old ones invisibly.
   useEffect(() => {
     if (areSuggestionsCurrentlyVisible) {
       setRenderedSuggestions({ suggestions, showImageUpload });
@@ -93,13 +32,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [suggestions, showImageUpload, areSuggestionsCurrentlyVisible]);
 
   useEffect(() => {
+    // When the agent finishes thinking, focus the input field.
     if (prevIsAgentThinking.current && !isAgentThinking) {
       inputRef.current?.focus();
     }
+    // Update the ref with the current value for the next render.
     prevIsAgentThinking.current = isAgentThinking;
   }, [isAgentThinking]);
 
 
+  // We only render the suggestions container if it's ever had content, to avoid taking up space on initial load.
   const hasEverHadSuggestions = renderedSuggestions.suggestions.length > 0 || renderedSuggestions.showImageUpload;
 
   const handleSend = () => {
@@ -123,17 +65,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <div className="p-4 bg-white border-t border-slate-200">
-      {showSupplierSelectionUI ? (
-        <SupplierSelectionUI 
-            showSupplierSelectionUI={showSupplierSelectionUI}
-            shortlistedSuppliers={shortlistedSuppliers}
-            primarySupplier={primarySupplier}
-            backupSupplier={backupSupplier}
-            onSetPrimarySupplier={onSetPrimarySupplier}
-            onSetBackupSupplier={onSetBackupSupplier}
-            onSendMessage={onSendMessage}
-        />
-      ) : hasEverHadSuggestions && (
+      {/* 
+        This container holds the suggestions. Its visibility is toggled, but it's not removed
+        from the DOM, which preserves its height and prevents the page from jumping.
+      */}
+      {hasEverHadSuggestions && (
         <div 
           className="flex flex-wrap gap-2 mb-3"
           style={{ visibility: areSuggestionsCurrentlyVisible ? 'visible' : 'hidden' }}
@@ -172,7 +108,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isInputDisabled ? "Please make a selection above..." : "Type your message or select an option..."}
+          placeholder={isInputDisabled ? "Waiting for agent..." : "Type your message or select an option..."}
           disabled={isInputDisabled}
           className="w-full py-2.5 pl-4 pr-14 text-sm text-slate-800 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-walmart-blue transition disabled:bg-slate-100 disabled:cursor-not-allowed"
           aria-label="Chat input"

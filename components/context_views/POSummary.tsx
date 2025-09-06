@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { AwardDetails } from '../../types';
 
 const PanelHeader: React.FC<{ title: string, subtitle: string }> = ({ title, subtitle }) => (
   <div className="p-6 border-b border-slate-200">
@@ -8,50 +9,73 @@ const PanelHeader: React.FC<{ title: string, subtitle: string }> = ({ title, sub
   </div>
 );
 
-const SummaryItem: React.FC<{ label: string, value: string | number }> = ({ label, value }) => (
-    <div className="flex justify-between py-4 text-sm">
-        <dt className="text-slate-500">{label}</dt>
-        <dd className="text-slate-900 font-medium">{value}</dd>
-    </div>
-);
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+};
 
-interface POSummaryProps {
-    primarySupplier: string | null;
-}
+export const POSummary: React.FC<{ awardDetails: AwardDetails }> = ({ awardDetails }) => {
+    const subtotal = awardDetails.items?.reduce((acc, item) => {
+        const quantity = parseInt(item.quantity, 10) || 0;
+        const price = item.price || 0;
+        return acc + (quantity * price);
+    }, 0) || 0;
 
-export const POSummary: React.FC<POSummaryProps> = ({ primarySupplier }) => {
-  return (
-    <div>
-      <PanelHeader title="Purchase Order Draft" subtitle={`PO #GTI-2024-1138 for ${primarySupplier || 'selected supplier'}`} />
-      <div className="p-6">
-        <div className="bg-slate-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-slate-900">PO Details</h3>
-            <dl className="mt-2 divide-y divide-slate-200">
-                <SummaryItem label="Product" value="STEM Educational Toy Kit" />
-                <SummaryItem label="Quantity" value="1,500 units" />
-                <SummaryItem label="Unit Price" value="$8.20" />
-                <SummaryItem label="Compliance" value="ASTM/EN71/CPSIA" />
-                <SummaryItem label="Lead Time" value="21-28 days" />
-                <SummaryItem label="Terms" value="Net-30, FOB" />
-            </dl>
+    const shipping = 550.00;
+    const total = subtotal + shipping;
+    
+    const poNumber = `GTI-2024-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    return (
+        <div>
+        <PanelHeader title="Purchase Order Draft" subtitle={`PO #${poNumber} for ${awardDetails.brand || 'Supplier'}`} />
+        <div className="p-6">
+            <div className="bg-slate-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-slate-900 mb-2">Order Items</h3>
+                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead className="bg-slate-100">
+                            <tr>
+                                <th scope="col" className="py-2 px-3 text-left font-semibold text-slate-900">Description</th>
+                                <th scope="col" className="py-2 px-3 text-right font-semibold text-slate-900">Quantity</th>
+                                <th scope="col" className="py-2 px-3 text-right font-semibold text-slate-900">Unit Price</th>
+                                <th scope="col" className="py-2 px-3 text-right font-semibold text-slate-900">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                            {awardDetails.items?.map((item, index) => {
+                                const quantity = parseInt(item.quantity, 10) || 0;
+                                const price = item.price || 0;
+                                const itemTotal = quantity * price;
+                                return (
+                                    <tr key={index}>
+                                        <td className="whitespace-nowrap py-2 px-3 text-slate-700">{item.description}</td>
+                                        <td className="whitespace-nowrap py-2 px-3 text-slate-500 text-right">{quantity.toLocaleString()}</td>
+                                        <td className="whitespace-nowrap py-2 px-3 text-slate-500 text-right">{formatCurrency(price)}</td>
+                                        <td className="whitespace-nowrap py-2 px-3 text-slate-700 font-medium text-right">{formatCurrency(itemTotal)}</td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div className="mt-6 border-t border-slate-200 pt-6">
+                <dl className="space-y-4">
+                    <div className="flex justify-between text-sm font-medium text-slate-600">
+                        <dt>Subtotal</dt>
+                        <dd>{formatCurrency(subtotal)}</dd>
+                    </div>
+                    <div className="flex justify-between text-sm text-slate-600">
+                        <dt>Est. Shipping & Handling</dt>
+                        <dd>{formatCurrency(shipping)}</dd>
+                    </div>
+                    <div className="flex justify-between text-base font-semibold text-slate-900">
+                        <dt>Total</dt>
+                        <dd>{formatCurrency(total)}</dd>
+                    </div>
+                </dl>
+            </div>
         </div>
-        <div className="mt-6 border-t border-slate-200 pt-6">
-            <dl className="space-y-4">
-                <div className="flex justify-between text-sm font-medium text-slate-600">
-                    <dt>Subtotal</dt>
-                    <dd>$12,300.00</dd>
-                </div>
-                 <div className="flex justify-between text-sm text-slate-600">
-                    <dt>Est. Shipping & Handling</dt>
-                    <dd>$550.00</dd>
-                </div>
-                <div className="flex justify-between text-base font-semibold text-slate-900">
-                    <dt>Total</dt>
-                    <dd>$12,850.00</dd>
-                </div>
-            </dl>
         </div>
-      </div>
-    </div>
-  );
+    );
 };

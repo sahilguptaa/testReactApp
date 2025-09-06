@@ -1,6 +1,10 @@
+import React from 'react';
+import type { AwardDetails } from './features/award/awardTypes';
+
 export enum UserType {
   AGENT = 'AGENT',
   USER = 'USER',
+  AMBER = 'AMBER',
 }
 
 export interface Message {
@@ -17,7 +21,14 @@ export enum ContextView {
   SUPPLIER_SHORTLIST = 'SUPPLIER_SHORTLIST',
   SUPPLIER_DASHBOARD = 'SUPPLIER_DASHBOARD',
   SUPPLIER_COMPARISON = 'SUPPLIER_COMPARISON',
+  RFQ_FORM = 'RFQ_FORM',
   PO_SUMMARY = 'PO_SUMMARY',
+  AWARD_CREATION = 'AWARD_CREATION',
+  AWARD_SUMMARY = 'AWARD_SUMMARY',
+  AWARD_PDF_GENERATION = 'AWARD_PDF_GENERATION',
+  AWARD_SENDING = 'AWARD_SENDING',
+  AWARD_SUPPLIER_VIEW = 'AWARD_SUPPLIER_VIEW',
+  AWARD_FINAL_STATUS = 'AWARD_FINAL_STATUS',
 }
 
 export interface Supplier {
@@ -27,14 +38,11 @@ export interface Supplier {
   status: string;
 }
 
-export interface SupplierSelectionState {
-  primary: string | null;
-  backup: string | null;
-}
+export type { AwardDetails };
 
 export interface ConversationStep {
   speaker: UserType;
-  text: React.ReactNode | ((selection: SupplierSelectionState) => React.ReactNode);
+  text: React.ReactNode;
   options?: string[];
   thinkingTime?: number;
   waitingTime?: number;
@@ -43,5 +51,10 @@ export interface ConversationStep {
   autoContinue?: boolean;
   isThinkingMessage?: boolean;
   awaitsCompletion?: boolean;
-  isSupplierSelection?: boolean;
+  // FIX: Broaden the type for `customAction` to allow for different flow control actions.
+  customAction?: 'START_REVIEW_FLOW' | 'AWARD_ACCEPTED_PROCEED_TO_PO';
+  formSection?: 'initial' | 'hierarchy' | 'terms' | 'clauses' | 'items';
+  simulateSupplierResponse?: boolean;
+  updateSupplierStatuses?: { supplierName: string; newStatus: string }[];
+  dynamicText?: 'awardCongrats' | 'rfqFormHeader';
 }

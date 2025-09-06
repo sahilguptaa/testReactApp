@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 
-const PREPARING_STEPS = [
-  'Analyzing response gaps...',
-  'Cross-referencing with compliance checklist...',
-  'Formulating targeted questions...',
-  'Drafting follow-ups for each supplier...',
+const CREATION_STEPS = [
+  'Fetching submitted award data...',
+  'Retrieving standardized legal template...',
+  'Populating document with award details...',
+  'Generating secure PDF document...',
 ];
 
-export const PreparingQuestionsAnimation: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
+export const AwardPDFCreationAnimation: React.FC<{ onComplete?: () => void }> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    if (currentStep >= PREPARING_STEPS.length) {
+    const totalDuration = 4000;
+    const stepDuration = totalDuration / CREATION_STEPS.length;
+    
+    if (currentStep >= CREATION_STEPS.length) {
       if (onComplete) {
         const timer = setTimeout(onComplete, 500);
         return () => clearTimeout(timer);
@@ -21,16 +24,16 @@ export const PreparingQuestionsAnimation: React.FC<{ onComplete?: () => void }> 
 
     const timer = setTimeout(() => {
       setCurrentStep(c => c + 1);
-    }, 500); // Animation speed per step
+    }, stepDuration);
 
     return () => clearTimeout(timer);
   }, [currentStep, onComplete]);
 
   return (
     <div>
-      <p className="font-medium mb-3">Preparing follow-up questions based on current data...</p>
+      <p className="font-medium mb-3">Generating award document...</p>
       <div className="space-y-2">
-        {PREPARING_STEPS.map((step, index) => (
+        {CREATION_STEPS.map((step, index) => (
           <div key={index} className="flex items-center text-sm">
             {index < currentStep ? (
               <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

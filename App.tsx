@@ -1,11 +1,19 @@
 
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { LeftNavBar } from './components/LeftNavBar';
 import { ChatPanel } from './components/ChatPanel';
 import { ContextPanel } from './components/ContextPanel';
-import { CONVERSATION_SCRIPT, QUALIFIED_SUPPLIERS } from './constants';
-import { Message, UserType, ContextView, ConversationStep } from './types';
+import { CONVERSATION_SCRIPT, QUALIFIED_SUPPLIERS, DETAILED_SUPPLIER_INFO } from './constants';
+import { Message, UserType, ContextView, ConversationStep, AwardDetails } from './types';
+import { ResizableHandle } from './components/ResizableHandle';
+
+import { AwardPDFCreationAnimation } from './features/award/components/animations/AwardPDFCreationAnimation';
+import { ReviewAwardAnimation } from './features/award/components/animations/ReviewAwardAnimation';
+import { REVIEW_AWARD_DETAILS } from './features/award/awardConstants';
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -13,15 +21,26 @@ const App: React.FC = () => {
   const [isAgentThinking, setIsAgentThinking] = useState(false);
   const [isAgentWaiting, setIsAgentWaiting] = useState(false);
   const [isAgentSending, setIsAgentSending] = useState(false);
+  const [isPdfGeneratingAnimationRunning, setIsPdfGeneratingAnimationRunning] = useState(false);
   const [contextView, setContextView] = useState<ContextView>(ContextView.INITIAL);
   const [userOptions, setUserOptions] = useState<string[]>([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set());
   const [isNavOpen, setIsNavOpen] = useState(true);
   const [supplierStatuses, setSupplierStatuses] = useState<Record<string, string>>({});
-  const [primarySupplier, setPrimarySupplier] = useState<string | null>(null);
-  const [backupSupplier, setBackupSupplier] = useState<string | null>(null);
-  const [showSupplierSelectionUI, setShowSupplierSelectionUI] = useState(false);
+  const [awardDetails, setAwardDetails] = useState<AwardDetails>({});
+  const [supplierResponse, setSupplierResponse] = useState<'Accept' | 'Reject' | null>(null);
+  const [isReviewFlow, setIsReviewFlow] = useState(false);
+  const [participants, setParticipants] = useState<Set<UserType>>(new Set([UserType.AGENT, UserType.USER]));
+  const [isRfqSent, setIsRfqSent] = useState(false);
+  const [isVettingStarted, setIsVettingStarted] = useState(false);
+  const [rfqSupplier, setRfqSupplier] = useState<string | null>(null);
+  const [chatContextTitle, setChatContextTitle] = useState('Collab');
+
+
+  const [chatPanelWidth, setChatPanelWidth] = useState(Math.max(400, window.innerWidth * 0.35));
+  const mainRef = useRef<HTMLElement>(null);
+  const isResizing = useRef(false);
 
   const imageUploadRef = useRef<HTMLInputElement>(null);
 
@@ -30,61 +49,108 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // FIX: Use ReturnType<typeof setTimeout> for timers to ensure correct typing in browser environments.
     let waitingTimerId: ReturnType<typeof setTimeout> | undefined;
-
     if (currentStep >= CONVERSATION_SCRIPT.length) return;
 
     const step: ConversationStep = CONVERSATION_SCRIPT[currentStep];
+    const isPdfAnimationStep = React.isValidElement(step.text) && (step.text.type === AwardPDFCreationAnimation);
+    const isReviewAnimationStep = React.isValidElement(step.text) && (step.text.type === ReviewAwardAnimation);
 
-    if (step.speaker === UserType.AGENT) {
+    if (step.speaker === UserType.AMBER) {
+        setParticipants(prev => {
+            if (prev.has(UserType.AMBER)) return prev;
+            const newSet = new Set(prev);
+            newSet.add(UserType.AMBER);
+            return newSet;
+        });
+    }
+
+    if (step.speaker === UserType.AGENT || step.speaker === UserType.AMBER) {
       setIsAgentThinking(true);
-
       const baseThinkingTime = step.thinkingTime || 0;
       const variableDelay = step.thinkingTime ? Math.random() * 1000 : 0;
       const totalDelay = baseThinkingTime + variableDelay;
 
       const thinkingTimerId = setTimeout(() => {
         setIsAgentThinking(false);
+
+        if (step.updateSupplierStatuses) {
+            setSupplierStatuses(prevStatuses => {
+                const newStatuses = { ...prevStatuses };
+                step.updateSupplierStatuses!.forEach(update => {
+                    newStatuses[update.supplierName] = update.newStatus;
+                });
+                return newStatuses;
+            });
+        }
+
+        if (isPdfAnimationStep) setIsPdfGeneratingAnimationRunning(true);
         
         let messageText = step.text;
-        if (typeof messageText === 'function') {
-            messageText = messageText({ primary: primarySupplier, backup: backupSupplier });
+
+        if (step.dynamicText === 'awardCongrats') {
+            const awardName = awardDetails.awardName || `${awardDetails.brand || rfqSupplier || 'Your'} Award - ${new Date().getFullYear()}`;
+            messageText = (
+                <div>
+                    <ul className="list-disc list-inside ml-2 mt-2 bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1">
+                    <p className="font-semibold text-slate-600">Message for Supplier</p>
+                    <p>Congratulations! Your items have been selected for the {awardName}. The enclosed document contains quantities, costs, and projected store counts. Please review and confirm acceptance by EOD tomorrow.</p>
+                    </ul>
+                </div>
+            );
+        } else if (step.dynamicText === 'rfqFormHeader') {
+            messageText = `Great. I've prepared the RFQ form for ${rfqSupplier} based on our intake details. Please review it on the left and submit when you're ready.`;
         }
 
-        if (step.awaitsCompletion && React.isValidElement(messageText)) {
-          messageText = React.cloneElement(messageText as React.ReactElement<any>, {
-            onComplete: () => {
-              const nextStepIndex = currentStep + 1;
-              if (nextStepIndex < CONVERSATION_SCRIPT.length) {
-                setCurrentStep(nextStepIndex);
-              }
-            },
-          });
-        }
-
-        addMessage({ user: UserType.AGENT, text: messageText, isThinkingMessage: step.isThinkingMessage });
-
-        if (step.contextView) {
-          setContextView(step.contextView);
-        }
-
-        const hasOptions = (step.options && step.options.length > 0) || step.isImageUpload || step.isSupplierSelection;
-
-        const proceed = () => {
-            if (step.autoContinue && !hasOptions) {
+        if (step.awaitsCompletion && React.isValidElement(step.text)) {
+            let onCompleteHandler = () => {
                 const nextStepIndex = currentStep + 1;
-                if (nextStepIndex < CONVERSATION_SCRIPT.length) {
-                    setCurrentStep(nextStepIndex);
-                }
+                if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+            };
+            let stepSpecificProps: Record<string, any> = {};
+
+            if (isPdfAnimationStep) {
+                onCompleteHandler = () => {
+                    setIsPdfGeneratingAnimationRunning(false);
+                    const nextStepIndex = currentStep + 1;
+                    if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+                };
+            } else if (isReviewAnimationStep) {
+                // This and any other future animations would go here
+            }
+            
+            messageText = React.cloneElement(step.text as React.ReactElement<any>, {
+                onComplete: onCompleteHandler,
+                ...stepSpecificProps
+            });
+        }
+        
+        if(messageText) addMessage({ user: step.speaker, text: messageText, isThinkingMessage: step.isThinkingMessage });
+
+        if (step.contextView) setContextView(step.contextView);
+        
+        const proceed = () => {
+            if (step.autoContinue && !((step.options && step.options.length > 0) || step.isImageUpload)) {
+                const nextStepIndex = currentStep + 1;
+                if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
             } else if (!step.awaitsCompletion) {
-                setUserOptions(step.options || []);
+                let options = step.options || [];
+                if (isReviewFlow && step.contextView === ContextView.AWARD_PDF_GENERATION && options.includes("No, start over")) {
+                    options = options.filter(opt => opt !== "No, start over");
+                }
+                setUserOptions(options);
                 setShowImageUpload(step.isImageUpload || false);
-                setShowSupplierSelectionUI(step.isSupplierSelection || false);
             }
         };
-        
-        if (step.waitingTime) {
+
+        if (step.simulateSupplierResponse) {
+            setIsAgentWaiting(true);
+            const delay = 5000;
+            waitingTimerId = setTimeout(() => {
+                const response = 'Accept';
+                handleSupplierResponse(response);
+            }, delay);
+        } else if (step.waitingTime) {
             setIsAgentWaiting(true);
             waitingTimerId = setTimeout(() => {
                 setIsAgentWaiting(false);
@@ -98,43 +164,185 @@ const App: React.FC = () => {
       
       return () => {
           clearTimeout(thinkingTimerId);
-          if (waitingTimerId) {
-              clearTimeout(waitingTimerId);
-          }
+          if (waitingTimerId) clearTimeout(waitingTimerId);
       };
     } else if (step.speaker === UserType.USER) {
+      if (typeof step.text === 'string' && step.text.includes('Vitamin D3')) {
+          const itemsText = step.text.toString();
+          const parsedItems = itemsText.split('\n').map(line => {
+              const [upc, itemNumber, description, quantity, dc, price] = line.split(',');
+              return { upc, itemNumber, description, quantity, dc, price: price ? parseFloat(price) : undefined };
+          });
+          setAwardDetails(prev => ({...prev, items: parsedItems}));
+      }
+
       const timer = setTimeout(() => {
-          // FIX: Resolve `step.text` if it is a function to ensure it is a valid ReactNode before passing to `addMessage`.
-          let messageText = step.text;
-          if (typeof messageText === 'function') {
-            // This case is not expected for user steps in the script, but handled for type safety.
-            messageText = messageText({ primary: null, backup: null });
-          }
-          addMessage({ user: UserType.USER, text: messageText });
+          addMessage({ user: UserType.USER, text: step.text });
           const nextStepIndex = currentStep + 1;
-          if (nextStepIndex < CONVERSATION_SCRIPT.length) {
-              setCurrentStep(nextStepIndex);
-          }
+          if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
       }, 1000);
       
       return () => clearTimeout(timer);
     }
-  }, [currentStep, primarySupplier, backupSupplier]);
+  }, [currentStep, isReviewFlow, rfqSupplier, awardDetails.brand]);
 
   useEffect(() => {
     if (contextView === ContextView.SUPPLIER_DASHBOARD) {
         const initialStatuses: Record<string, string> = {};
         for (const supplierName of selectedSuppliers) {
             const supplierInfo = QUALIFIED_SUPPLIERS.find(s => s.name === supplierName);
-            if (supplierInfo) {
-                initialStatuses[supplierName] = supplierInfo.status === 'Onboarded' ? 'Onboarded' : 'Invite Pending';
-            }
+            if (supplierInfo) initialStatuses[supplierName] = supplierInfo.status === 'Onboarded' ? 'Onboarded' : 'Invite Pending';
         }
         setSupplierStatuses(initialStatuses);
     }
   }, [contextView, selectedSuppliers]);
 
   const handleUserResponse = (response: string) => {
+    if (response === 'Retrieve Buy Plan' || response === 'Retrieve it') {
+        setChatContextTitle(`Collab - Intake form : ${Math.floor(1000 + Math.random() * 9000)}`);
+    }
+
+    if (response === 'Yes, ask some vetting questions.') {
+        setIsVettingStarted(true);
+    }
+
+    if (response === 'Show comparison') {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        const comparisonStepIndex = CONVERSATION_SCRIPT.findIndex(step => 
+            step.contextView === ContextView.SUPPLIER_COMPARISON
+        );
+        if (comparisonStepIndex !== -1) {
+            setCurrentStep(comparisonStepIndex);
+        } else {
+            // Fallback
+            const nextStepIndex = currentStep + 1;
+            if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+        }
+        return;
+    }
+    
+    if (response === 'Accept directly') {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        const lockedStepIndex = CONVERSATION_SCRIPT.findIndex(step => 
+          typeof step.text === 'string' && step.text.startsWith("Locked ✅")
+        );
+        if (lockedStepIndex !== -1) {
+          setCurrentStep(lockedStepIndex);
+        } else {
+          // Fallback just in case
+          const nextStepIndex = currentStep + 1;
+          if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+        }
+        return;
+    }
+
+    if (response === 'Yes, proceed to RFQ') {
+        if (!rfqSupplier) {
+            addMessage({ user: UserType.AGENT, text: "Please select one supplier from the comparison view to proceed with the RFQ." });
+            return;
+        }
+    }
+    
+    if (response === 'Review Award') {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        setShowImageUpload(false);
+        setAwardDetails(REVIEW_AWARD_DETAILS); // Pre-populate data
+        setChatContextTitle(`Collab - Award : ${REVIEW_AWARD_DETAILS.awardName}`);
+        setIsReviewFlow(true);
+        setContextView(ContextView.AWARD_CREATION); // Show finalization/loader view
+        const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
+        if (reviewFlowStartIndex !== -1) {
+            setCurrentStep(reviewFlowStartIndex);
+        }
+        return;
+    }
+
+    if (response === 'Prepare Award') {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        setShowImageUpload(false);
+
+        const detailsToSet: AwardDetails = {
+            ...REVIEW_AWARD_DETAILS,
+            brand: rfqSupplier || REVIEW_AWARD_DETAILS.brand,
+            vendorNumber: rfqSupplier ? (DETAILED_SUPPLIER_INFO[rfqSupplier]?.companyDetails['Supplier #'] || 'N/A') : REVIEW_AWARD_DETAILS.vendorNumber,
+            awardName: `${rfqSupplier || REVIEW_AWARD_DETAILS.brand} Award - ${new Date().getFullYear()}`,
+        };
+
+        setAwardDetails(detailsToSet);
+        setChatContextTitle(`Collab - Award : ${detailsToSet.awardName!}`);
+        setIsReviewFlow(true);
+        setContextView(ContextView.AWARD_CREATION);
+        const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
+        if (reviewFlowStartIndex !== -1) {
+            setCurrentStep(reviewFlowStartIndex);
+        }
+        return;
+    }
+    
+    // Handle starting the award flow directly
+    if (response === 'Create Award' || response === '/beacon Create Award') {
+      const awardFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => 
+          step.speaker === UserType.AGENT &&
+          typeof step.text === 'string' &&
+          step.text.startsWith("Great! Let’s create the award.")
+      );
+
+      if (awardFlowStartIndex !== -1) {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        setShowImageUpload(false);
+        const brandName = rfqSupplier || '';
+        const awardName = brandName ? `${brandName} Award - ${new Date().getFullYear()}` : 'New Award';
+        const startDate = new Date();
+        startDate.setDate(1);
+        startDate.setMonth(startDate.getMonth() + 1);
+        const endDate = new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate() -1);
+
+        setAwardDetails({
+            brand: brandName,
+            awardName: awardName,
+            startDate: startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'}),
+            endDate: endDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'}),
+        });
+        setChatContextTitle(`Collab - Award : ${awardName}`);
+        setIsReviewFlow(false);
+        setCurrentStep(awardFlowStartIndex);
+        return; // Stop further execution
+      }
+    }
+    
+    if (response === 'Return to Dashboard') {
+        handleReturnToDashboard();
+        return;
+    }
+
+    if (response === 'Confirm and Generate PDF') {
+        const pdfGenStepIndex = CONVERSATION_SCRIPT.findIndex(step => 
+            React.isValidElement(step.text) && step.text.type === AwardPDFCreationAnimation
+        );
+        if (pdfGenStepIndex !== -1) {
+            addMessage({ user: UserType.USER, text: response });
+            setUserOptions([]);
+            setShowImageUpload(false);
+            setCurrentStep(pdfGenStepIndex);
+            return;
+        }
+    }
+    
+    if (response === 'Submit RFQ') {
+        setIsRfqSent(true);
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        setShowImageUpload(false);
+        const nextStepIndex = currentStep + 1;
+        if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+        return;
+    }
+
     let userMessage = response;
     const currentStepConfig = CONVERSATION_SCRIPT[currentStep];
 
@@ -144,130 +352,239 @@ const App: React.FC = () => {
         return;
       }
       userMessage = `Shortlist: ${Array.from(selectedSuppliers).join(', ')}.`;
-    } else if (currentStepConfig.isSupplierSelection && response === 'Confirm Selection') {
-        if (!primarySupplier) {
-            addMessage({ user: UserType.AGENT, text: "Please select a primary supplier before confirming." });
-            return;
+    }
+
+    if (response.startsWith("Market: ")) {
+        const details = Object.fromEntries(response.split(', ').map(part => { const [key, value] = part.split(': '); const keyMap: Record<string, string> = { 'Market': 'market', 'Vendor': 'vendorNumber', 'Brand': 'brand' }; return [keyMap[key], value]; }));
+        setAwardDetails(prev => {
+            const newDetails = { ...prev, ...details };
+            if (!isReviewFlow && newDetails.brand && newDetails.brand !== prev.brand) {
+                const awardName = `${newDetails.brand} Award - ${new Date().getFullYear()}`;
+                newDetails.awardName = awardName;
+                setChatContextTitle(`Collab - Award : ${awardName}`);
+            }
+            return newDetails;
+        });
+    } else if (response === "Accept Hierarchy") {
+        setAwardDetails(prev => ({ ...prev, hierarchy: "SBU: Health & Wellness → Dept: OTC Care → Category: Digestive Support" }));
+    } else if (response.startsWith("Type: ")) {
+        const details = Object.fromEntries(response.split(', ').map(part => { const [key, value] = part.split(': '); const keyMap: Record<string, string> = { 'Type': 'awardType', 'Freight': 'freightTerms', 'Length': 'awardLength', 'Index': 'costIndex', 'Pricing': 'pricingMethod' }; return [keyMap[key], value]; }));
+        setAwardDetails(prev => ({ ...prev, ...details }));
+    } else if (response.startsWith("Commitment: ")) {
+        const details = Object.fromEntries(response.split(', ').map(part => { const [key, value] = part.split(': '); const keyMap: Record<string, string> = { 'Commitment': 'volumeCommitment', 'ROFR': 'rofr', 'Auto-Renewal': 'autoRenewal' }; return [keyMap[key], value === 'Yes']; }));
+        setAwardDetails(prev => ({ ...prev, ...details }));
+    } else {
+        const currentFormSection = CONVERSATION_SCRIPT[currentStep]?.formSection;
+        if (currentFormSection === 'items' && response.includes(',')) {
+             const parsedItems = response.split('\n').map(line => {
+                const [upc, itemNumber, description, quantity, dc, price] = line.trim().split(',');
+                return { upc, itemNumber, description, quantity, dc, price: price ? parseFloat(price) : undefined };
+            }).filter(i => i.upc && i.itemNumber);
+            if (parsedItems.length > 0) {
+                setAwardDetails(prev => ({ ...prev, items: parsedItems }));
+            }
         }
-        userMessage = `Primary: ${primarySupplier}${backupSupplier ? `, Backup: ${backupSupplier}` : ''}.`;
-        setShowSupplierSelectionUI(false);
     }
     
     addMessage({ user: UserType.USER, text: userMessage });
     setUserOptions([]);
     setShowImageUpload(false);
     
-    // Conditional step jumps
-    if (currentStep === 18 && response === "Draft my own instead.") {
-        setCurrentStep(21); // Jump to manual question step
-        return;
+    if (response === 'Yes, send for approval') {
+        setContextView(ContextView.AWARD_SENDING);
+    }
+    
+    if (response === 'No, start over') {
+        const awardFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => 
+            step.speaker === UserType.AGENT &&
+            typeof step.text === 'string' &&
+            step.text.startsWith("Great! Let’s create the award.")
+        );
+        if (awardFlowStartIndex !== -1) {
+            setAwardDetails({}); // Reset award details
+            setContextView(ContextView.AWARD_CREATION); // Immediately switch view to prevent wrong loader
+            setCurrentStep(awardFlowStartIndex);
+        }
+        return; 
     }
 
     if (currentStep === 12 && response === "Yes, send them.") {
         setIsAgentSending(true);
-
         const newStatuses = { ...supplierStatuses };
-        QUALIFIED_SUPPLIERS.forEach(supplier => {
-            if (selectedSuppliers.has(supplier.name) && supplier.status !== 'Onboarded') {
-                newStatuses[supplier.name] = 'Sending Invite...';
-            }
-        });
+        QUALIFIED_SUPPLIERS.forEach(supplier => { if (selectedSuppliers.has(supplier.name) && supplier.status !== 'Onboarded') newStatuses[supplier.name] = 'Sending Invite...'; });
         setSupplierStatuses(newStatuses);
-        
         const nextStepDelay = CONVERSATION_SCRIPT[currentStep + 1]?.thinkingTime || 2000;
         
         setTimeout(() => {
             setIsAgentSending(false);
-            
             setSupplierStatuses(prevStatuses => {
                 const finalStatuses = { ...prevStatuses };
-                Object.keys(finalStatuses).forEach(name => {
-                    if (finalStatuses[name] === 'Sending Invite...') {
-                        finalStatuses[name] = 'Invited';
-                    }
-                });
+                Object.keys(finalStatuses).forEach(name => { if (finalStatuses[name] === 'Sending Invite...') finalStatuses[name] = 'Invited'; });
                 return finalStatuses;
             });
-            
             const nextStepIndex = currentStep + 1;
-            if (nextStepIndex < CONVERSATION_SCRIPT.length) {
-                setCurrentStep(nextStepIndex);
-            }
+            if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
         }, nextStepDelay);
-
         return; 
     }
-    
-    if (currentStep === 4 && response === "Accept directly") {
-      setCurrentStep(7);
-      return;
+
+    if (response === 'Yes, show the summary') {
+      const summaryStepIndex = CONVERSATION_SCRIPT.findIndex(step => step.contextView === ContextView.AWARD_SUMMARY);
+      if (summaryStepIndex !== -1) {
+          setCurrentStep(summaryStepIndex);
+          return;
+      }
     }
 
     const nextStepIndex = currentStep + 1;
-    if (nextStepIndex < CONVERSATION_SCRIPT.length) {
-      setCurrentStep(nextStepIndex);
-    }
+    if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
   };
 
   const handleImageUpload = () => {
     addMessage({ user: UserType.USER, text: "Uploading the image." });
     setUserOptions([]);
     setShowImageUpload(false);
-
     const nextStepIndex = currentStep + 1;
-    if (nextStepIndex < CONVERSATION_SCRIPT.length) {
-      setCurrentStep(nextStepIndex);
+    if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+  };
+
+  const handleSupplierResponse = (response: 'Accept' | 'Reject') => {
+    setIsAgentThinking(false);
+    setIsAgentWaiting(false);
+    setIsAgentSending(false);
+
+    setSupplierResponse(response);
+    
+    if (response === 'Accept') {
+        const poFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'AWARD_ACCEPTED_PROCEED_TO_PO');
+        if (poFlowStartIndex !== -1) {
+            setCurrentStep(poFlowStartIndex);
+        } else {
+            // Fallback for safety
+            setContextView(ContextView.AWARD_FINAL_STATUS);
+            setUserOptions([]);
+            addMessage({ user: UserType.AGENT, text: (
+              <div>
+                <p>Supplier has accepted the award.</p>
+              </div>
+            )});
+            setCurrentStep(CONVERSATION_SCRIPT.length);
+        }
+    } else {
+        setContextView(ContextView.AWARD_FINAL_STATUS);
+        setUserOptions([]);
+        addMessage({ user: UserType.AGENT, text: (
+          <div>
+            <p>"The award process has been terminated. Please connect with the Sourcing Manager for any feedback. Thank you.”</p>
+          </div>
+        )});
+        setCurrentStep(CONVERSATION_SCRIPT.length); // End conversation
     }
   };
   
+  const handleAwardDetailsChange = (updates: Partial<AwardDetails>) => {
+    setAwardDetails(prev => ({...prev, ...updates}));
+  };
+
   const triggerImageUpload = () => {
-      if (imageUploadRef.current) {
-          imageUploadRef.current.click();
-      }
+      if (imageUploadRef.current) imageUploadRef.current.click();
   };
 
   const handleToggleSupplier = (supplierName: string) => {
     setSelectedSuppliers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(supplierName)) {
-        newSet.delete(supplierName);
-      } else {
-        newSet.add(supplierName);
-      }
+      if (newSet.has(supplierName)) newSet.delete(supplierName);
+      else newSet.add(supplierName);
       return newSet;
     });
   };
-
-  const handleSetPrimarySupplier = (name: string) => {
-      setPrimarySupplier(name);
-      if (backupSupplier === name) {
-          setBackupSupplier(null);
-      }
+  
+  const handleSelectRfqSupplier = (supplierName: string) => {
+    setRfqSupplier(prev => prev === supplierName ? null : supplierName);
   };
 
-  const handleSetBackupSupplier = (name: string) => {
-      if (primarySupplier !== name) {
-          setBackupSupplier(name);
-      }
+  const handleReturnToDashboard = () => {
+    setMessages([]);
+    setContextView(ContextView.INITIAL);
+    setAwardDetails({});
+    setSupplierResponse(null);
+    setSelectedSuppliers(new Set());
+    setIsReviewFlow(false);
+    setParticipants(new Set([UserType.AGENT, UserType.USER]));
+    setIsRfqSent(false);
+    setIsVettingStarted(false);
+    setRfqSupplier(null);
+    setChatContextTitle('Collab');
+    // Setting step to 0 will re-trigger the initial message via useEffect
+    setCurrentStep(0); 
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+        if (!isResizing.current || !mainRef.current) return;
+
+        const mainRect = mainRef.current.getBoundingClientRect();
+        const newWidthPx = mainRect.right - moveEvent.clientX;
+        
+        const minPanelWidth = 400;
+        const contextPanelMinWidth = 400;
+        const maxPanelWidth = mainRect.width - contextPanelMinWidth;
+
+        if (newWidthPx > minPanelWidth && newWidthPx < maxPanelWidth) {
+            setChatPanelWidth(newWidthPx);
+        }
+    };
+
+    const handleMouseUp = () => {
+        isResizing.current = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+};
+
+  const activeFormSection = CONVERSATION_SCRIPT[currentStep]?.formSection;
 
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <Header onMenuClick={() => setIsNavOpen(!isNavOpen)} />
       <div className="flex flex-1 overflow-hidden">
         <LeftNavBar isOpen={isNavOpen} />
-        <main className="flex-grow grid grid-cols-1 md:grid-cols-5 gap-6 p-6 overflow-auto">
-          <div className="md:col-span-3 bg-white rounded-2xl shadow-md overflow-hidden flex flex-col">
+        <main ref={mainRef} className="flex-grow flex p-6 gap-2.5 overflow-auto">
+          <div className="flex-1 bg-white rounded-2xl shadow-md overflow-hidden flex flex-col min-w-0">
             <ContextPanel 
               view={contextView} 
               selectedSuppliers={selectedSuppliers}
               onToggleSupplier={handleToggleSupplier}
               supplierStatuses={supplierStatuses}
-              primarySupplier={primarySupplier}
+              awardDetails={awardDetails}
+              supplierResponse={supplierResponse}
+              onSupplierResponse={handleSupplierResponse}
+              onAwardDetailsChange={handleAwardDetailsChange}
+              onFormSubmit={handleUserResponse}
+              activeFormSection={activeFormSection}
+              isAgentThinking={isAgentThinking || isAgentWaiting || isAgentSending || isPdfGeneratingAnimationRunning}
+              onReturnToDashboard={handleReturnToDashboard}
+              isReviewFlow={isReviewFlow}
+              isRfqSent={isRfqSent}
+              isVettingStarted={isVettingStarted}
+              rfqSupplier={rfqSupplier}
+              onSelectRfqSupplier={handleSelectRfqSupplier}
             />
           </div>
-          <div className="md:col-span-2 bg-white rounded-2xl shadow-md flex flex-col overflow-hidden">
+          
+          <ResizableHandle onMouseDown={handleMouseDown} />
+
+          <div style={{ flexBasis: `${chatPanelWidth}px` }} className="flex-shrink-0 bg-white rounded-2xl shadow-md flex flex-col overflow-hidden min-w-0">
             <ChatPanel
               messages={messages}
               isAgentThinking={isAgentThinking}
@@ -277,12 +594,8 @@ const App: React.FC = () => {
               onUserResponse={handleUserResponse}
               showImageUpload={showImageUpload}
               onImageUploadClick={triggerImageUpload}
-              showSupplierSelectionUI={showSupplierSelectionUI}
-              shortlistedSuppliers={Array.from(selectedSuppliers)}
-              primarySupplier={primarySupplier}
-              backupSupplier={backupSupplier}
-              onSetPrimarySupplier={handleSetPrimarySupplier}
-              onSetBackupSupplier={handleSetBackupSupplier}
+              participants={participants}
+              contextTitle={chatContextTitle}
             />
           </div>
         </main>
