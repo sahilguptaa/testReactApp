@@ -17,9 +17,9 @@ export const USER_PROFILE_IMAGE_URL = "https://images.unsplash.com/photo-1472099
 export const AMBER_PROFILE_IMAGE_URL = "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
 
 export const USER_PROFILES: Record<UserType, { name: string, imageUrl: string, isAgent?: boolean }> = {
-    [UserType.AGENT]: { name: 'Beacon AI', imageUrl: '', isAgent: true },
-    [UserType.USER]: { name: 'Jony', imageUrl: USER_PROFILE_IMAGE_URL },
-    [UserType.AMBER]: { name: 'Amber', imageUrl: AMBER_PROFILE_IMAGE_URL },
+    [UserType.AGENT]: { name: 'Agent : Beacon', imageUrl: '', isAgent: true },
+    [UserType.USER]: { name: 'Associate : Jony', imageUrl: USER_PROFILE_IMAGE_URL },
+    [UserType.AMBER]: { name: 'Merchant : Amber', imageUrl: AMBER_PROFILE_IMAGE_URL },
 };
 
 
@@ -370,7 +370,7 @@ const baseScript: ConversationStep[] = [
     dynamicText: 'rfqFormHeader',
     thinkingTime: 1200,
     contextView: ContextView.RFQ_FORM,
-    options: ["Submit RFQ"],
+    options: ["Send RFQ"],
   },
   {
     speaker: UserType.AGENT,
@@ -382,7 +382,7 @@ const baseScript: ConversationStep[] = [
   {
     speaker: UserType.AGENT,
     text: "Great, the RFQ has been sent. Based on the initial data, I have prepared the award for you to review.",
-    options: ["Prepare Award"],
+    options: ["Create award & Send"],
     thinkingTime: 1200,
   },
   // START AWARD FLOW

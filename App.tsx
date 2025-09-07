@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { LeftNavBar } from './components/LeftNavBar';
@@ -184,7 +181,7 @@ const App: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [currentStep, isReviewFlow, rfqSupplier, awardDetails.brand]);
+  }, [currentStep, isReviewFlow]);
 
   useEffect(() => {
     if (contextView === ContextView.SUPPLIER_DASHBOARD) {
@@ -260,7 +257,7 @@ const App: React.FC = () => {
         return;
     }
 
-    if (response === 'Prepare Award') {
+    if (response === 'Create award & Send') {
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
         setShowImageUpload(false);
