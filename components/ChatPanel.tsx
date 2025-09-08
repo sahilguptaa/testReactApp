@@ -19,6 +19,7 @@ interface ChatPanelProps {
   onImageUploadClick: () => void;
   participants: Set<UserType>;
   contextTitle: string;
+  rfqSupplier: string | null;
 }
 
 const ParticipantAvatar: React.FC<{ children: React.ReactNode; statusColor: string }> = ({ children, statusColor }) => (
@@ -39,6 +40,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onImageUploadClick,
   participants,
   contextTitle,
+  rfqSupplier,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -80,6 +82,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <div className="flex items-center space-x-2">
           {Array.from(participants).map(userType => {
             const profile = USER_PROFILES[userType];
+            if (userType === UserType.SUPPLIER) {
+                const initial = rfqSupplier ? rfqSupplier.charAt(0) : 'S';
+                return (
+                    <ParticipantAvatar key={userType} statusColor="bg-green-500">
+                        <div title={rfqSupplier || 'Supplier'} className="w-8 h-8 rounded-full bg-slate-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                            {initial}
+                        </div>
+                    </ParticipantAvatar>
+                );
+            }
             return (
               <ParticipantAvatar key={userType} statusColor="bg-green-500">
                 {profile.isAgent ? (
@@ -106,7 +118,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       <div className="flex-grow p-6 overflow-y-auto bg-white">
         <div className="flex flex-col space-y-4">
           {messages.map((msg) => (
-            <Message key={msg.id} user={msg.user} text={msg.text} isThinkingMessage={msg.isThinkingMessage} />
+            <Message key={msg.id} user={msg.user} text={msg.text} isThinkingMessage={msg.isThinkingMessage} rfqSupplier={rfqSupplier} />
           ))}
           {isAgentThinking && <ThinkingIndicator />}
           {isAgentWaiting && <WaitingIndicator />}

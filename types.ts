@@ -6,6 +6,7 @@ export enum UserType {
   AGENT = 'AGENT',
   USER = 'USER',
   AMBER = 'AMBER',
+  SUPPLIER = 'SUPPLIER',
 }
 
 export interface Message {
@@ -57,5 +58,5 @@ export interface ConversationStep {
   formSection?: 'initial' | 'hierarchy' | 'terms' | 'clauses' | 'items';
   simulateSupplierResponse?: boolean;
   updateSupplierStatuses?: { supplierName: string; newStatus: string }[];
-  dynamicText?: 'awardCongrats' | 'rfqFormHeader' | 'agreementAccepted';
+  dynamicText?: 'awardCongrats' | 'rfqFormHeader' | 'agreementAccepted' | 'rfqResponseReceived';
 }

@@ -18,6 +18,7 @@ export const USER_PROFILES: Record<UserType, { name: string, imageUrl: string, i
     [UserType.AGENT]: { name: 'Agent : Beacon', imageUrl: '', isAgent: true },
     [UserType.USER]: { name: 'Associate : Jony', imageUrl: USER_PROFILE_IMAGE_URL },
     [UserType.AMBER]: { name: 'Merchant : Amber', imageUrl: AMBER_PROFILE_IMAGE_URL },
+    [UserType.SUPPLIER]: { name: 'Supplier', imageUrl: '' },
 };
 
 
@@ -135,7 +136,7 @@ const baseScript: ConversationStep[] = [
             </ol>
         </div>
     ),
-    options: ["Retrieve Buy Plan", "Review Award"],
+    options: ["Retrieve Buy Plan", "Create Award"],
     thinkingTime: 1000,
   },
   {
@@ -396,18 +397,25 @@ const baseScript: ConversationStep[] = [
     thinkingTime: 500,
     waitingTime: 4000,
     autoContinue: true,
+  },
+  {
+    speaker: UserType.SUPPLIER,
+    text: "I have filled the RFQ.",
+    thinkingTime: 1500,
+    autoContinue: true,
     customAction: 'RFQ_RESPONSE_RECEIVED',
   },
   {
     speaker: UserType.AGENT,
-    text: "We've received a response from Brainy Builder Toys. I've updated the RFQ form with their details.",
+    text: null,
+    dynamicText: 'rfqResponseReceived',
     thinkingTime: 1500,
     autoContinue: true,
   },
   {
     speaker: UserType.AGENT,
     text: "Based on their positive response, I have prepared the award for you to review.",
-    options: ["Create Award & Send"],
+    options: ["Create award"],
     thinkingTime: 1200,
   },
   // START AWARD FLOW
@@ -537,7 +545,6 @@ const baseScript: ConversationStep[] = [
       options: ["Return to Dashboard"],
       thinkingTime: 1000,
   },
-  // START REVIEW AWARD FLOW
   {
     speaker: UserType.AGENT,
     text: null, // This step is now silent and just for navigation

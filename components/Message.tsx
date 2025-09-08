@@ -7,12 +7,14 @@ interface MessageProps {
   user: UserType;
   text: React.ReactNode;
   isThinkingMessage?: boolean;
+  rfqSupplier?: string | null;
 }
 
-export const Message: React.FC<MessageProps> = ({ user, text, isThinkingMessage }) => {
+export const Message: React.FC<MessageProps> = ({ user, text, isThinkingMessage, rfqSupplier }) => {
   const profile = USER_PROFILES[user];
   const isPrimaryUser = user === UserType.USER;
   const isAgent = user === UserType.AGENT;
+  const isSupplier = user === UserType.SUPPLIER;
   const isThinking = isAgent && isThinkingMessage;
 
   const alignment = isPrimaryUser ? 'justify-end' : 'justify-start';
@@ -37,6 +39,10 @@ export const Message: React.FC<MessageProps> = ({ user, text, isThinkingMessage 
                   <path d="M9 13v2"></path>
               </svg>
             </div>
+          ) : isSupplier ? (
+            <div title={rfqSupplier || 'Supplier'} className="w-8 h-8 rounded-full bg-slate-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-sm">
+                {rfqSupplier ? rfqSupplier.charAt(0) : 'S'}
+            </div>
           ) : (
             <img
               className="w-8 h-8 rounded-full flex-shrink-0"
@@ -52,10 +58,15 @@ export const Message: React.FC<MessageProps> = ({ user, text, isThinkingMessage 
             isThinking ? 'border border-dashed border-slate-300' : 'shadow-sm'
           }`}
         >
-          {!isAgent && (
+          {!isAgent && !isSupplier && (
             <div className={`font-semibold mb-1 text-xs ${nameColor}`}>
               {profile.name}
             </div>
+          )}
+          {isSupplier && (
+              <div className={`font-semibold mb-1 text-xs ${nameColor}`}>
+                {rfqSupplier || 'Supplier'}
+              </div>
           )}
           {text}
         </div>

@@ -67,7 +67,16 @@ const App: React.FC = () => {
         });
     }
 
-    if (step.speaker === UserType.AGENT || step.speaker === UserType.AMBER) {
+    if (step.speaker === UserType.SUPPLIER) {
+        setParticipants(prev => {
+            if (prev.has(UserType.SUPPLIER)) return prev;
+            const newSet = new Set(prev);
+            newSet.add(UserType.SUPPLIER);
+            return newSet;
+        });
+    }
+
+    if (step.speaker === UserType.AGENT || step.speaker === UserType.AMBER || step.speaker === UserType.SUPPLIER) {
       setIsAgentThinking(true);
       const baseThinkingTime = step.thinkingTime || 0;
       const variableDelay = step.thinkingTime ? Math.random() * 1000 : 0;
@@ -84,6 +93,14 @@ const App: React.FC = () => {
                 });
                 return newStatuses;
             });
+        }
+        
+        // Handle custom actions immediately after thinking, regardless of waiting time.
+        if (step.customAction === 'AGREEMENT_ACCEPTED') {
+            setIsAgreementAccepted(true);
+        }
+        if (step.customAction === 'RFQ_RESPONSE_RECEIVED') {
+            setIsRfqResponseReceived(true);
         }
 
         if (isPdfAnimationStep) setIsPdfGeneratingAnimationRunning(true);
@@ -104,6 +121,8 @@ const App: React.FC = () => {
             messageText = `Great. I've prepared the RFQ form for ${rfqSupplier} based on our intake details. Please review it on the left and submit when you're ready.`;
         } else if (step.dynamicText === 'agreementAccepted') {
             messageText = `Agreement with ${rfqSupplier} has been accepted! We can now proceed with the RFQ.`;
+        } else if (step.dynamicText === 'rfqResponseReceived') {
+            messageText = `We've received a response from ${rfqSupplier}. I've updated the RFQ form with their details.`;
         }
 
 
@@ -159,12 +178,6 @@ const App: React.FC = () => {
             setIsAgentWaiting(true);
             waitingTimerId = setTimeout(() => {
                 setIsAgentWaiting(false);
-                if (step.customAction === 'AGREEMENT_ACCEPTED') {
-                    setIsAgreementAccepted(true);
-                }
-                if (step.customAction === 'RFQ_RESPONSE_RECEIVED') {
-                    setIsRfqResponseReceived(true);
-                }
                 proceed();
             }, step.waitingTime);
         } else {
@@ -276,14 +289,14 @@ const App: React.FC = () => {
         }
     }
     
-    if (response === 'Review Award') {
+    if (response === 'Create Award') {
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
         setShowImageUpload(false);
         setAwardDetails(REVIEW_AWARD_DETAILS); // Pre-populate data
         setChatContextTitle(`Collab - Award : ${REVIEW_AWARD_DETAILS.awardName}`);
         setIsReviewFlow(true);
-        setContextView(ContextView.AWARD_CREATION); // Show finalization/loader view
+        setContextView(ContextView.AWARD_SUMMARY); // Show finalization/loader view
         const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
         if (reviewFlowStartIndex !== -1) {
             setCurrentStep(reviewFlowStartIndex);
@@ -304,7 +317,7 @@ const App: React.FC = () => {
         return;
     }
 
-    if (response === 'Create award & Send') {
+    if (response === 'Initiate new award & Send') {
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
         setShowImageUpload(false);
@@ -318,17 +331,25 @@ const App: React.FC = () => {
 
         setAwardDetails(detailsToSet);
         setChatContextTitle(`Collab - Award : ${detailsToSet.awardName!}`);
-        setIsReviewFlow(true);
-        setContextView(ContextView.AWARD_CREATION);
-        const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
-        if (reviewFlowStartIndex !== -1) {
-            setCurrentStep(reviewFlowStartIndex);
+        // Change from review flow to step-by-step creation flow.
+        setIsReviewFlow(false); 
+        
+        const awardFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => 
+            step.speaker === UserType.AGENT &&
+            typeof step.text === 'string' &&
+            step.text.startsWith("Great! Let’s create the award.")
+        );
+        
+        if (awardFlowStartIndex !== -1) {
+            // Set the view and step to start the pre-populated form flow.
+            setContextView(ContextView.AWARD_CREATION);
+            setCurrentStep(awardFlowStartIndex);
         }
         return;
     }
     
     // Handle starting the award flow directly
-    if (response === 'Create Award' || response === '/beacon Create Award') {
+    if (response === 'Initiate new Award' || response === '/beacon Initiate Award') {
       const awardFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => 
           step.speaker === UserType.AGENT &&
           typeof step.text === 'string' &&
@@ -446,7 +467,7 @@ const App: React.FC = () => {
         );
         if (awardFlowStartIndex !== -1) {
             setAwardDetails({}); // Reset award details
-            setContextView(ContextView.AWARD_CREATION); // Immediately switch view to prevent wrong loader
+            setContextView(ContextView.AWARD_SUMMARY); // Immediately switch view to prevent wrong loader
             setCurrentStep(awardFlowStartIndex);
         }
         return; 
@@ -647,6 +668,7 @@ const App: React.FC = () => {
               onImageUploadClick={triggerImageUpload}
               participants={participants}
               contextTitle={chatContextTitle}
+              rfqSupplier={rfqSupplier}
             />
           </div>
         </main>
