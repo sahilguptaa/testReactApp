@@ -122,7 +122,7 @@ export const DETAILED_SUPPLIER_INFO: Record<string, any> = {
   },
 };
 
-const baseScript: ConversationStep[] = [
+export const CONVERSATION_SCRIPT: ConversationStep[] = [
   // Step 0 & 1
   {
     speaker: UserType.AGENT,
@@ -159,26 +159,33 @@ const baseScript: ConversationStep[] = [
     options: ["Accept directly", "Ask a few clarifications."],
     thinkingTime: 1000,
   },
-  // This is where the old flow for clarification was. It will be replaced.
-  // Old Step 3, 4, 5
+  // Steps 3, 4, 5: New Clarification Flow (triggered by user message)
   {
-    speaker: UserType.USER,
-    text: "This is a placeholder and will be replaced.",
+    speaker: UserType.AGENT,
+    text: <AddingParticipantAnimation />,
+    thinkingTime: 500,
+    isThinkingMessage: true,
+    awaitsCompletion: true,
   },
   {
-    speaker: UserType.USER,
-    text: "This is a placeholder and will be replaced.",
+    speaker: UserType.AGENT,
+    text: null,
+    waitingTime: 2500,
+    autoContinue: true,
   },
   {
-    speaker: UserType.USER,
-    text: "This is a placeholder and will be replaced.",
+    speaker: UserType.AMBER,
+    text: "Yes phthalate/lead-free, Non-sanctioned origins, Recyclable packaging.",
+    autoContinue: true
   },
+  // Step 6
    {
     speaker: UserType.AGENT,
     text: "Do you want me to lock it and move forward?",
     options: ["Yes, lock it."],
     thinkingTime: 1200,
   },
+  // Step 7
   {
     speaker: UserType.AGENT,
     text: "Locked ✅. Intake form finalized. Moving on to supplier search.",
@@ -186,7 +193,7 @@ const baseScript: ConversationStep[] = [
     contextView: ContextView.FINAL_INTAKE_FORM,
     autoContinue: true,
   },
-  // Step 3
+  // Step 8
   {
     speaker: UserType.AGENT,
     text: <DeepThinkingAnimation />,
@@ -195,6 +202,7 @@ const baseScript: ConversationStep[] = [
     awaitsCompletion: true,
     isThinkingMessage: true,
   },
+  // Step 9
   {
     speaker: UserType.AGENT,
     text: <AgentTaskView />,
@@ -203,6 +211,7 @@ const baseScript: ConversationStep[] = [
     awaitsCompletion: true,
     isThinkingMessage: true,
   },
+  // Step 10
   {
     speaker: UserType.AGENT,
     text: 'Found 5 qualified suppliers (2 Walmart Suppliers, 1 Seller, 2 External). Select from the list on the left and confirm your shortlist.',
@@ -210,13 +219,14 @@ const baseScript: ConversationStep[] = [
     thinkingTime: 1800,
     contextView: ContextView.SUPPLIER_SHORTLIST
   },
+  // Step 11
   {
     speaker: UserType.AGENT,
     text: "Done ✅. Selected suppliers have been shortlisted.",
     thinkingTime: 1000,
     autoContinue: true,
   },
-  // Step 4
+  // Step 12
   {
     speaker: UserType.AGENT,
     text: "Some of the selected suppliers are already onboarded, while others are new. Want me to send onboarding invites?",
@@ -224,19 +234,21 @@ const baseScript: ConversationStep[] = [
     thinkingTime: 800,
     contextView: ContextView.SUPPLIER_DASHBOARD
   },
+  // Step 13
   {
     speaker: UserType.AGENT,
     text: "Done ✅. Invites sent to the new suppliers.",
     thinkingTime: 2000,
     autoContinue: true,
   },
-  // Step 5
+  // Step 14
   {
     speaker: UserType.AGENT,
     text: "Okay, I'm waiting for the suppliers to respond now. This might take a moment.",
     thinkingTime: 1500,
     autoContinue: true,
   },
+  // Step 15
   {
     speaker: UserType.AGENT,
     text: (
@@ -248,6 +260,7 @@ const baseScript: ConversationStep[] = [
     autoContinue: true,
     updateSupplierStatuses: [{ supplierName: 'Brainy Builder Toys Pvt. Ltds', newStatus: 'Onboarded' }],
   },
+  // Step 16
   {
     speaker: UserType.AGENT,
     text: (
@@ -259,12 +272,14 @@ const baseScript: ConversationStep[] = [
     autoContinue: true,
     updateSupplierStatuses: [{ supplierName: 'Gizmo Gurus', newStatus: 'Onboarded' }],
   },
+  // Step 17
   {
     speaker: UserType.AGENT,
     text: "The suppliers are now onboarded. Would you like to ask some vetting questions?",
     options: ["Yes, ask some vetting questions."],
     thinkingTime: 800,
   },
+  // Step 18
   {
     speaker: UserType.AGENT,
     text: <PreparingQuestionsAnimation />,
@@ -273,6 +288,7 @@ const baseScript: ConversationStep[] = [
     awaitsCompletion: true,
     isThinkingMessage: true,
   },
+  // Step 19
   {
     speaker: UserType.AGENT,
     text: (
@@ -289,12 +305,14 @@ const baseScript: ConversationStep[] = [
     options: ["Yes, send them.", "Draft my own instead."],
     thinkingTime: 1000,
   },
+  // Step 20
   {
       speaker: UserType.AGENT,
       text: "Okay, sending the questions now.",
       thinkingTime: 800,
       autoContinue: true,
   },
+  // Step 21
   {
       speaker: UserType.AGENT,
       text: null, // This will just show the waiting indicator
@@ -302,6 +320,7 @@ const baseScript: ConversationStep[] = [
       waitingTime: 3000,
       autoContinue: true,
   },
+  // Step 22
   {
       speaker: UserType.AGENT,
       text: (
@@ -317,17 +336,20 @@ const baseScript: ConversationStep[] = [
       thinkingTime: 500,
       options: ["Ask more", "Show comparison"],
   },
+  // Step 23
   {
     speaker: UserType.AGENT,
     text: "Great. Please type your question for a specific supplier (e.g., 'To Brainy Builder Toys Pvt. Ltds: Do you support customized PMS, costs?').",
     thinkingTime: 800,
   },
+  // Step 24
   {
     speaker: UserType.AGENT,
     text: "Brainy Builder Toys Pvt. Ltds confirms PMS customization, no added cost, MOQ unchanged.",
     options: ["Show the comparison."],
     thinkingTime: 1200,
   },
+  // Step 25
   {
     speaker: UserType.AGENT,
     text: "Supplier profiles have been updated.",
@@ -335,7 +357,7 @@ const baseScript: ConversationStep[] = [
     contextView: ContextView.SUPPLIER_COMPARISON,
     autoContinue: true,
   },
-  // Step 6 (Evaluation)
+  // Step 26 (Evaluation)
   {
     speaker: UserType.AGENT,
     text: (
@@ -566,46 +588,4 @@ const baseScript: ConversationStep[] = [
       contextView: ContextView.AWARD_SUMMARY,
       options: ["Confirm and Generate PDF"],
   }
-];
-
-const clarificationFlow: ConversationStep[] = [
-    {
-        speaker: UserType.USER,
-        text: (
-            <div>
-                <p><strong>@Amber</strong> Could you confirm:</p>
-                <ul className="list-disc list-inside ml-2 mt-1">
-                    <li>Do you need explicit phthalate/lead-free declarations?</li>
-                    <li>Supplier origin (non-sanctioned only)?</li>
-                    <li>Packaging details?</li>
-                </ul>
-            </div>
-        ),
-        autoContinue: true,
-        thinkingTime: 200,
-    },
-    {
-        speaker: UserType.AGENT,
-        text: <AddingParticipantAnimation />,
-        thinkingTime: 500,
-        isThinkingMessage: true,
-        awaitsCompletion: true,
-    },
-    {
-        speaker: UserType.AGENT,
-        text: null,
-        waitingTime: 2500,
-        autoContinue: true,
-    },
-    {
-      speaker: UserType.AMBER,
-      text: "Yes phthalate/lead-free, Non-sanctioned origins, Recyclable packaging.",
-      autoContinue: true
-    }
-];
-
-export const CONVERSATION_SCRIPT: ConversationStep[] = [
-    ...baseScript.slice(0, 3),
-    ...clarificationFlow,
-    ...baseScript.slice(6),
 ];

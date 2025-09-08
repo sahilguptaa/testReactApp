@@ -4,7 +4,7 @@ import { Header } from './components/Header';
 import { LeftNavBar } from './components/LeftNavBar';
 import { ChatPanel } from './components/ChatPanel';
 import { ContextPanel } from './components/ContextPanel';
-import { CONVERSATION_SCRIPT, QUALIFIED_SUPPLIERS, DETAILED_SUPPLIER_INFO } from './constants';
+import { CONVERSATION_SCRIPT, QUALIFIED_SUPPLIERS, DETAILED_SUPPLIER_INFO, USER_PROFILES } from './constants';
 import { Message, UserType, ContextView, ConversationStep, AwardDetails } from './types';
 import { ResizableHandle } from './components/ResizableHandle';
 
@@ -224,6 +224,12 @@ const App: React.FC = () => {
   const handleUserResponse = (response: string) => {
     if (response === 'Retrieve Buy Plan' || response === 'Retrieve it') {
         setChatContextTitle(`Collab - Intake form : ${Math.floor(1000 + Math.random() * 9000)}`);
+    }
+
+    if (response === 'Ask a few clarifications.') {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        return;
     }
 
     if (response === 'Yes, ask some vetting questions.') {
@@ -684,6 +690,7 @@ const App: React.FC = () => {
               participants={participants}
               contextTitle={chatContextTitle}
               rfqSupplier={rfqSupplier}
+              userProfiles={USER_PROFILES}
             />
           </div>
         </main>

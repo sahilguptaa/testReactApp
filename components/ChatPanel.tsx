@@ -20,6 +20,7 @@ interface ChatPanelProps {
   participants: Set<UserType>;
   contextTitle: string;
   rfqSupplier: string | null;
+  userProfiles: typeof USER_PROFILES;
 }
 
 const ParticipantAvatar: React.FC<{ children: React.ReactNode; statusColor: string }> = ({ children, statusColor }) => (
@@ -41,6 +42,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   participants,
   contextTitle,
   rfqSupplier,
+  userProfiles,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +136,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         showImageUpload={showImageUpload}
         onImageUploadClick={onImageUploadClick}
         isAgentThinking={isAgentThinking || isAgentWaiting || isAgentSending}
+        userProfiles={userProfiles}
       />
     </div>
   );
