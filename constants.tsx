@@ -415,7 +415,7 @@ const baseScript: ConversationStep[] = [
   {
     speaker: UserType.AGENT,
     text: "Based on their positive response, I have prepared the award for you to review.",
-    options: ["Create award"],
+    options: ["Create Award"],
     thinkingTime: 1200,
   },
   // START AWARD FLOW

@@ -293,10 +293,25 @@ const App: React.FC = () => {
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
         setShowImageUpload(false);
-        setAwardDetails(REVIEW_AWARD_DETAILS); // Pre-populate data
-        setChatContextTitle(`Collab - Award : ${REVIEW_AWARD_DETAILS.awardName}`);
+    
+        // Populate award details dynamically from RFQ results or use defaults
+        const supplierInfo = rfqSupplier ? DETAILED_SUPPLIER_INFO[rfqSupplier] : null;
+        const vendorNumber = supplierInfo?.companyDetails['Supplier #'];
+
+        const detailsToSet: AwardDetails = {
+            ...REVIEW_AWARD_DETAILS, // Use as a template for items etc.
+            brand: rfqSupplier || REVIEW_AWARD_DETAILS.brand,
+            vendorNumber: (vendorNumber && vendorNumber !== 'N/A') ? vendorNumber : REVIEW_AWARD_DETAILS.vendorNumber,
+            awardName: `${rfqSupplier || REVIEW_AWARD_DETAILS.brand} Award - ${new Date().getFullYear()}`,
+        };
+        
+        setAwardDetails(detailsToSet);
+        setChatContextTitle(`Collab - Award : ${detailsToSet.awardName!}`);
         setIsReviewFlow(true);
-        setContextView(ContextView.AWARD_SUMMARY); // Show finalization/loader view
+        
+        // Set view to AWARD_CREATION to trigger the loading animation for the review flow
+        setContextView(ContextView.AWARD_CREATION); 
+        
         const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
         if (reviewFlowStartIndex !== -1) {
             setCurrentStep(reviewFlowStartIndex);
