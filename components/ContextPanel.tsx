@@ -42,6 +42,8 @@ interface ContextPanelProps {
   rfqSupplier: string | null;
   onSelectRfqSupplier: (supplierName: string) => void;
   isAgreementSent?: boolean;
+  isRfqResponseReceived?: boolean;
+  isPoSent?: boolean;
 }
 
 const viewMap: Record<ContextView, React.ComponentType<any>> = {
@@ -102,6 +104,8 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
   rfqSupplier,
   onSelectRfqSupplier,
   isAgreementSent,
+  isRfqResponseReceived,
+  isPoSent,
 }) => {
   const CurrentView = viewMap[view] || InitialView;
 
@@ -112,6 +116,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
     ContextView.AWARD_SENDING,
     ContextView.AWARD_SUPPLIER_VIEW,
     ContextView.AWARD_FINAL_STATUS,
+    ContextView.PO_SUMMARY,
   ].includes(view);
 
   const showIntakeProgressBar = [
@@ -130,7 +135,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
   if (isReviewLoading) {
       return (
           <div className="h-full flex flex-col">
-              <AwardFlowProgressBar currentView={view} supplierResponse={supplierResponse} />
+              <AwardFlowProgressBar currentView={view} supplierResponse={supplierResponse} isPoSent={isPoSent} />
               <div className="flex-grow overflow-y-auto">
                   <AwardGatheringLoader />
               </div>
@@ -156,6 +161,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
     viewProps.isAgreementSent = isAgreementSent;
   } else if (view === ContextView.RFQ_FORM) {
       viewProps.supplierName = rfqSupplier;
+      viewProps.isResponseReceived = isRfqResponseReceived;
   } else if (view === ContextView.AWARD_CREATION) {
     viewProps.awardDetails = awardDetails;
     viewProps.onDetailsChange = onAwardDetailsChange;
@@ -171,6 +177,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
     viewProps.awardDetails = awardDetails;
   } else if (view === ContextView.PO_SUMMARY) {
     viewProps.awardDetails = awardDetails;
+    viewProps.isPoSent = isPoSent;
   } else if (view === ContextView.AWARD_FINAL_STATUS) {
     viewProps.supplierResponse = supplierResponse;
     viewProps.onReturnToDashboard = onReturnToDashboard;
@@ -178,7 +185,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      {showAwardProgressBar && <AwardFlowProgressBar currentView={view} supplierResponse={supplierResponse} />}
+      {showAwardProgressBar && <AwardFlowProgressBar currentView={view} supplierResponse={supplierResponse} isPoSent={isPoSent} />}
       {showIntakeProgressBar && <IntakeFlowProgressBar currentView={view} isRfqSent={isRfqSent} isVettingStarted={isVettingStarted} />}
       <div className="flex-grow overflow-y-auto">
         <CurrentView {...viewProps} />

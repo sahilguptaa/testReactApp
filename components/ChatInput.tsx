@@ -8,23 +8,29 @@ interface ChatInputProps {
   isAgentThinking: boolean;
 }
 
+const IconButton: React.FC<{ children: React.ReactNode, onClick?: () => void, ariaLabel: string, disabled?: boolean }> = ({ children, onClick, ariaLabel, disabled }) => (
+    <button
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-walmart-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+    >
+        {children}
+    </button>
+);
+
+
 export const ChatInput: React.FC<ChatInputProps> = ({ suggestions, onSendMessage, showImageUpload, onImageUploadClick, isAgentThinking }) => {
   const [inputValue, setInputValue] = useState('');
   
-  // This state holds the suggestions we want to render, even when they are hidden, to prevent layout shifts.
   const [renderedSuggestions, setRenderedSuggestions] = useState({ suggestions, showImageUpload });
   
   const inputRef = useRef<HTMLInputElement>(null);
-  // FIX: Provide an initial value to useRef. `useRef<T>()` requires an argument.
-  // `undefined` is the correct initial value to track the previous state, which doesn't exist on first render.
   const prevIsAgentThinking = useRef<boolean | undefined>(undefined);
 
   const isInputDisabled = isAgentThinking;
   const areSuggestionsCurrentlyVisible = (suggestions.length > 0 || showImageUpload) && !isAgentThinking;
-  const showSendButton = inputValue.trim() !== '';
 
-  // We only update the suggestions to be rendered when new, visible suggestions arrive.
-  // This way, when the current suggestions are cleared, we keep rendering the old ones invisibly.
   useEffect(() => {
     if (areSuggestionsCurrentlyVisible) {
       setRenderedSuggestions({ suggestions, showImageUpload });
@@ -32,16 +38,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({ suggestions, onSendMessage
   }, [suggestions, showImageUpload, areSuggestionsCurrentlyVisible]);
 
   useEffect(() => {
-    // When the agent finishes thinking, focus the input field.
     if (prevIsAgentThinking.current && !isAgentThinking) {
       inputRef.current?.focus();
     }
-    // Update the ref with the current value for the next render.
     prevIsAgentThinking.current = isAgentThinking;
   }, [isAgentThinking]);
 
-
-  // We only render the suggestions container if it's ever had content, to avoid taking up space on initial load.
   const hasEverHadSuggestions = renderedSuggestions.suggestions.length > 0 || renderedSuggestions.showImageUpload;
 
   const handleSend = () => {
@@ -65,10 +67,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({ suggestions, onSendMessage
 
   return (
     <div className="p-4 bg-white border-t border-slate-200">
-      {/* 
-        This container holds the suggestions. Its visibility is toggled, but it's not removed
-        from the DOM, which preserves its height and prevents the page from jumping.
-      */}
       {hasEverHadSuggestions && (
         <div 
           className="flex flex-wrap gap-2 mb-3"
@@ -101,40 +99,38 @@ export const ChatInput: React.FC<ChatInputProps> = ({ suggestions, onSendMessage
         </div>
       )}
 
-      <div className="relative flex items-center">
+      <div className="bg-slate-100 rounded-xl p-1.5 flex items-center gap-1">
+         <IconButton ariaLabel="Attach file" disabled={isInputDisabled}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+        </IconButton>
+        <IconButton ariaLabel="Use microphone" disabled={isInputDisabled}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+            </svg>
+        </IconButton>
         <input
           ref={inputRef}
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={isInputDisabled ? "Waiting for agent..." : "Type your message or select an option..."}
+          placeholder={isInputDisabled ? "Waiting for agent..." : "Type your message"}
           disabled={isInputDisabled}
-          className="w-full py-2.5 pl-4 pr-14 text-sm text-slate-800 bg-white border border-slate-300 rounded-full focus:outline-none focus:ring-2 focus:ring-walmart-blue transition disabled:bg-slate-100 disabled:cursor-not-allowed"
+          className="flex-grow w-full py-1.5 px-3 text-sm text-slate-800 bg-transparent border-none focus:outline-none focus:ring-0 disabled:cursor-not-allowed"
           aria-label="Chat input"
         />
-        {showSendButton ? (
-          <button
-            onClick={handleSend}
-            disabled={isInputDisabled}
-            className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-10 text-white bg-walmart-blue rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-walmart-blue disabled:bg-slate-400 disabled:cursor-not-allowed transition"
-            aria-label="Send message"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M1.67 17.5L19.17 10L1.67 2.5v5.83l12.5 1.67l-12.5 1.67v5.83z" />
-            </svg>
-          </button>
-        ) : (
-          <button
-            disabled={isInputDisabled}
-            className="absolute inset-y-0 right-0 flex items-center justify-center w-10 h-10 text-white bg-walmart-blue rounded-full hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-walmart-blue disabled:bg-slate-400 disabled:cursor-not-allowed transition"
-            aria-label="Use microphone"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-            </svg>
-          </button>
-        )}
+        <button
+          onClick={handleSend}
+          disabled={isInputDisabled || inputValue.trim() === ''}
+          className="flex-shrink-0 flex items-center justify-center w-9 h-9 text-white bg-walmart-blue rounded-lg hover:bg-walmart-darkblue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-walmart-blue disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+          aria-label="Send message"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 transform rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </button>
       </div>
     </div>
   );

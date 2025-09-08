@@ -104,13 +104,13 @@ export const DETAILED_SUPPLIER_INFO: Record<string, any> = {
   'Brainy Builder Toys Pvt. Ltds': {
     name: "Brainy Builder Toys Pvt. Ltds",
     tags: ['External', 'Sustainable'],
-    location: 'Ningbo, China',
-    serScore: 82,
-    risk: 'Low',
+    location: 'Toronto, Canada',
+    serScore: 95,
+    risk: 'Strategic',
     companyDetails: {
       'Supplier #': 'N/A',
-      'Annual Sales 2024': '$12.5 million',
-      'Country': 'China',
+      'Annual Sales 2024': '$102 million',
+      'Country': 'Canada',
       'Ad Spend': '$500K',
       'Retail Market': 'Europe, US',
       'Growth': '11.3%',
@@ -130,8 +130,8 @@ const baseScript: ConversationStep[] = [
             <p>Hey Jony 👋 welcome back! You have some pending tasks.</p>
             <ol className="list-decimal list-inside ml-2 mt-2 space-y-1">
                 <li>Received Buy Plan from Amber</li>
-                <li>Pending awards review.</li>
-                <li>Purchase Order</li>
+                <li>Pending Awards Review.</li>
+                <li>Create Purchase Order</li>
             </ol>
         </div>
     ),
@@ -218,7 +218,7 @@ const baseScript: ConversationStep[] = [
   // Step 4
   {
     speaker: UserType.AGENT,
-    text: "Some of the selected suppliers are already onboarded, while others are new. Want me to send onboarding invites to the new ones?",
+    text: "Some of the selected suppliers are already onboarded, while others are new. Want me to send onboarding invites?",
     options: ["Yes, send them."],
     thinkingTime: 800,
     contextView: ContextView.SUPPLIER_DASHBOARD
@@ -260,21 +260,6 @@ const baseScript: ConversationStep[] = [
   },
   {
     speaker: UserType.AGENT,
-    text: (
-        <div>
-            <p>Responses are starting to come in:</p>
-            <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
-                <li><span className="font-semibold">ToyCrafters Inc. →</span> onboarded, 30k/month, $8.20/unit, compliance verified.</li>
-                <li><span className="font-semibold">Gizmo Gurus →</span> ASTM/EN71 claimed, ABS lead/phthalate-free, 20k/month, recyclable packaging, $7.90/unit.</li>
-                <li><span className="font-semibold">Brainy Builder Toys Pvt. Ltds →</span> EN71 provided, ABS lead-free (phthalate pending), ISO 9001, SMETA, FOB Ningbo (18–22 days), price not yet given.</li>
-            </ul>
-        </div>
-    ),
-    autoContinue: true,
-    thinkingTime: 1500,
-  },
-  {
-    speaker: UserType.AGENT,
     text: "The suppliers are now onboarded. Would you like to ask some vetting questions?",
     options: ["Yes, ask some vetting questions."],
     thinkingTime: 800,
@@ -305,8 +290,14 @@ const baseScript: ConversationStep[] = [
   },
   {
       speaker: UserType.AGENT,
-      text: "Okay, sending the questions now. This might take a moment while I gather the responses.",
+      text: "Okay, sending the questions now.",
       thinkingTime: 800,
+      autoContinue: true,
+  },
+  {
+      speaker: UserType.AGENT,
+      text: null, // This will just show the waiting indicator
+      thinkingTime: 200,
       waitingTime: 3000,
       autoContinue: true,
   },
@@ -314,10 +305,10 @@ const baseScript: ConversationStep[] = [
       speaker: UserType.AGENT,
       text: (
           <div>
-              <p>Got it. Here are the updated responses:</p>
+              <p>We have got the responses:</p>
               <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
                   <li><span className="font-semibold">Gizmo Gurus →</span> Pricing at 5k units is $7.50/unit. QC docs available. Uses recycled ABS. SMETA audited.</li>
-                  <li><span className="font-semibold">Brainy Builder Toys Pvt. Ltds →</span> Confirms phthalate-free. QC docs pending. ISO 14001 certified. BSCI audited.</li>
+                  <li><span className="font-semibold">Brainy Builder Toys Pvt. Ltds →</span> Pricing at 250,000 units is $5/unit. QC docs available. Confirms phthalate-free. ISO 14001 certified. BSCI audited.</li>
               </ul>
           </div>
       ),
@@ -338,7 +329,7 @@ const baseScript: ConversationStep[] = [
   },
   {
     speaker: UserType.AGENT,
-    text: "Profiles updated. Here is the consolidated comparison.",
+    text: "Supplier profiles have been updated.",
     thinkingTime: 2000,
     contextView: ContextView.SUPPLIER_COMPARISON,
     autoContinue: true,
@@ -348,10 +339,10 @@ const baseScript: ConversationStep[] = [
     speaker: UserType.AGENT,
     text: (
         <div>
-            <p>Here’s my evaluation:</p>
+            <p>Here is the consolidated comparison :</p>
             <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
                 <li><span className="font-semibold">ToyCrafters Inc. — 92/100:</span> Strong compliance, high capacity, predictable. Weakness: higher price.</li>
-                <li><span className="font-semibold">Brainy Builder Toys Pvt. Ltds — 88/100:</span> Good price, verified compliance, customization. Weakness: lower capacity.</li>
+                <li><span className="font-semibold">Brainy Builder Toys Pvt. Ltds — 95/100:</span> Good price, verified compliance, customization.</li>
                 <li><span className="font-semibold">Gizmo Gurus — (N/A):</span> External supplier, best pricing, but compliance is only claimed, not verified.</li>
             </ul>
             <p className="mt-2">Do you want to send an agreement to the selected supplier?</p>
@@ -401,8 +392,22 @@ const baseScript: ConversationStep[] = [
   },
   {
     speaker: UserType.AGENT,
-    text: "Great, the RFQ has been sent. Based on the initial data, I have prepared the award for you to review.",
-    options: ["Create award & Send"],
+    text: "RFQ sent. Now waiting for supplier responses.",
+    thinkingTime: 500,
+    waitingTime: 4000,
+    autoContinue: true,
+    customAction: 'RFQ_RESPONSE_RECEIVED',
+  },
+  {
+    speaker: UserType.AGENT,
+    text: "We've received a response from Brainy Builder Toys. I've updated the RFQ form with their details.",
+    thinkingTime: 1500,
+    autoContinue: true,
+  },
+  {
+    speaker: UserType.AGENT,
+    text: "Based on their positive response, I have prepared the award for you to review.",
+    options: ["Create Award & Send"],
     thinkingTime: 1200,
   },
   // START AWARD FLOW
@@ -518,7 +523,7 @@ const baseScript: ConversationStep[] = [
       text: "Excellent. I've drafted a Purchase Order based on the award details. Please review it on the left.",
       thinkingTime: 1500,
       contextView: ContextView.PO_SUMMARY,
-      options: ["Confirm and send PO"],
+      options: ["Confirm and Create PO"],
   },
   {
       speaker: UserType.AGENT,

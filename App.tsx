@@ -35,6 +35,8 @@ const App: React.FC = () => {
   const [rfqSupplier, setRfqSupplier] = useState<string | null>(null);
   const [isAgreementSent, setIsAgreementSent] = useState(false);
   const [isAgreementAccepted, setIsAgreementAccepted] = useState(false);
+  const [isRfqResponseReceived, setIsRfqResponseReceived] = useState(false);
+  const [isPoSent, setIsPoSent] = useState(false);
   const [chatContextTitle, setChatContextTitle] = useState('Collab');
 
 
@@ -160,6 +162,9 @@ const App: React.FC = () => {
                 if (step.customAction === 'AGREEMENT_ACCEPTED') {
                     setIsAgreementAccepted(true);
                 }
+                if (step.customAction === 'RFQ_RESPONSE_RECEIVED') {
+                    setIsRfqResponseReceived(true);
+                }
                 proceed();
             }, step.waitingTime);
         } else {
@@ -282,6 +287,19 @@ const App: React.FC = () => {
         const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
         if (reviewFlowStartIndex !== -1) {
             setCurrentStep(reviewFlowStartIndex);
+        }
+        return;
+    }
+    
+    if (response === 'Confirm and send PO') {
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        setShowImageUpload(false);
+        setIsPoSent(true);
+        
+        const nextStepIndex = currentStep + 1;
+        if (nextStepIndex < CONVERSATION_SCRIPT.length) {
+            setCurrentStep(nextStepIndex);
         }
         return;
     }
@@ -542,6 +560,8 @@ const App: React.FC = () => {
     setRfqSupplier(null);
     setIsAgreementSent(false);
     setIsAgreementAccepted(false);
+    setIsRfqResponseReceived(false);
+    setIsPoSent(false);
     setChatContextTitle('Collab');
     // Setting step to 0 will re-trigger the initial message via useEffect
     setCurrentStep(0); 
@@ -608,6 +628,8 @@ const App: React.FC = () => {
               rfqSupplier={rfqSupplier}
               onSelectRfqSupplier={handleSelectRfqSupplier}
               isAgreementSent={isAgreementSent}
+              isRfqResponseReceived={isRfqResponseReceived}
+              isPoSent={isPoSent}
             />
           </div>
           

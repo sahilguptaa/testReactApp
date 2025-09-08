@@ -56,7 +56,16 @@ const DetailItem: React.FC<{ label: string; value: string; isHighlighted?: boole
 
 const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => void; disabled?: boolean; }> = ({ data, isSelected, onSelect, disabled }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    const riskColor = data.risk === 'Low' ? 'bg-green-100 text-green-800' : data.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
+    
+    let riskColor = 'bg-red-100 text-red-800';
+    if (data.risk === 'Low') {
+        riskColor = 'bg-yellow-100 text-yellow-800';
+    } else if (data.risk === 'Medium') {
+        riskColor = 'bg-orange-100 text-orange-800';
+    } else if (data.risk === 'Strategic') {
+        riskColor = 'bg-green-100 text-green-800';
+    }
+
 
     return (
         <div 
@@ -74,6 +83,12 @@ const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => v
                     />
                 </div>
                 <div className="flex items-center space-x-2 mt-2">
+                    {data.risk === 'Strategic' && (
+                        <span className="flex items-center text-xs font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                            {icons.crown}
+                            <span className="ml-1.5">Best Match</span>
+                        </span>
+                    )}
                     {data.tags.map((tag: string) => (
                         <span key={tag} className="flex items-center text-xs font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
                             {tag.toLowerCase().includes('walmart') ? icons.cart : icons.crown}
@@ -89,7 +104,7 @@ const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => v
                         <span className="text-green-600">{icons.check}</span>
                         <span className="ml-2 text-sm font-bold text-slate-700">SER Score: <span className="text-green-700">{data.serScore}/100</span></span>
                     </div>
-                    <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${riskColor}`}>{data.risk} Risk</span>
+                    <span className={`px-2 py-0.5 text-xs font-bold rounded-md ${riskColor}`}>{data.risk}</span>
                 </div>
             </div>
 

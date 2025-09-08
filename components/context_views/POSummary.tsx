@@ -13,7 +13,26 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 };
 
-export const POSummary: React.FC<{ awardDetails: AwardDetails }> = ({ awardDetails }) => {
+const POSentConfirmation: React.FC = () => (
+    <div>
+        <PanelHeader title="Purchase Order Sent" subtitle="The PO has been successfully sent to the supplier." />
+        <div className="p-8 flex flex-col items-center justify-center text-center bg-slate-50 h-full">
+            <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+            </div>
+            <h3 className="mt-4 text-lg font-semibold text-slate-800">PO Created</h3>
+            <p className="mt-1 text-sm text-slate-600">The supplier has been notified. You can track the status in your dashboard.</p>
+        </div>
+    </div>
+);
+
+export const POSummary: React.FC<{ awardDetails: AwardDetails, isPoSent?: boolean }> = ({ awardDetails, isPoSent }) => {
+    if (isPoSent) {
+        return <POSentConfirmation />;
+    }
+
     const subtotal = awardDetails.items?.reduce((acc, item) => {
         const quantity = parseInt(item.quantity, 10) || 0;
         const price = item.price || 0;

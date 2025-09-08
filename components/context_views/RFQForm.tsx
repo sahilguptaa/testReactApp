@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const PanelHeader: React.FC<{ title: string, subtitle: string }> = ({ title, subtitle }) => (
@@ -24,9 +25,10 @@ const FormField: React.FC<{ label: string, value: string | React.ReactNode, isTe
 
 interface RFQFormProps {
     supplierName: string | null;
+    isResponseReceived?: boolean;
 }
 
-export const RFQForm: React.FC<RFQFormProps> = ({ supplierName }) => {
+export const RFQForm: React.FC<RFQFormProps> = ({ supplierName, isResponseReceived }) => {
   return (
     <div>
       <PanelHeader 
@@ -36,26 +38,28 @@ export const RFQForm: React.FC<RFQFormProps> = ({ supplierName }) => {
       <div className="p-6 space-y-4">
         <FormField 
             label="Price" 
-            value="Requesting quotes for 1,500 units, with price breaks at 5,000 and 10,000 units." 
+            value={isResponseReceived ? <span className="text-green-700 font-medium">$5.00/unit @ 250k. Volume discounts available.</span> : ""}
         />
         <FormField 
             label="Compliance" 
             value={
-                <ul className="list-disc list-inside">
-                    <li>ASTM F963</li>
-                    <li>EN71</li>
-                    <li>CPSIA</li>
-                    <li>Confirmation of phthalate-free materials</li>
-                </ul>
+                isResponseReceived ? (
+                    <ul className="list-disc list-inside text-green-700 font-medium">
+                        <li>ASTM F963 (Confirmed)</li>
+                        <li>EN71 (Confirmed)</li>
+                        <li>CPSIA (Confirmed)</li>
+                        <li>Phthalate-free docs provided</li>
+                    </ul>
+                ) : ""
             }
             isTextarea
         />
         <FormField 
             label="Defect Rate Tolerance" 
-            value="Must be less than 1.5% on initial production runs." 
+            value={isResponseReceived ? <span className="text-green-700 font-medium">Guaranteed &lt;1.0% defect rate.</span> : ""}
         />
         <div className="pt-4 text-center text-sm text-slate-500">
-            <p>Click "Send RFQ" in the chat to send this request to the selected supplier.</p>
+            <p>{isResponseReceived ? "Response received. Proceed with the agent's suggestion in chat." : "Click \"Send RFQ\" in the chat to send this request to the selected supplier."}</p>
         </div>
       </div>
     </div>

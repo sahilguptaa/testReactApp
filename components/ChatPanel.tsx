@@ -66,7 +66,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         </div>
         <div>
             <h2 className="text-lg font-semibold text-slate-800">{contextTitle}</h2>
-            <p className="text-sm text-slate-500">Your AI assistant</p>
+            <p className="text-sm text-slate-500">Your AI Assistant</p>
         </div>
       </div>
 
