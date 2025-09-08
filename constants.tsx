@@ -136,7 +136,7 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
             </ol>
         </div>
     ),
-    options: ["Retrieve Buy Plan", "Create Award"],
+    options: ["Retrieve Buy Plan"],
     thinkingTime: 1000,
   },
   {
@@ -234,52 +234,28 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
     thinkingTime: 800,
     contextView: ContextView.SUPPLIER_DASHBOARD
   },
-  // Step 13
+  // Step 13: Start sending invites
   {
     speaker: UserType.AGENT,
-    text: "Done ✅. Invites sent to the new suppliers.",
-    thinkingTime: 2000,
+    text: "Okay, I'm sending the invites now. I'll update you as they become ready for the agreement phase.",
+    thinkingTime: 1000,
     autoContinue: true,
   },
-  // Step 14
+  // Step 14: This is a special step that triggers the simulation in App.tsx
   {
     speaker: UserType.AGENT,
-    text: "Okay, I'm waiting for the suppliers to respond now. This might take a moment.",
-    thinkingTime: 1500,
-    autoContinue: true,
+    text: null,
+    customAction: 'SIMULATE_ONBOARDING',
+    autoContinue: false, // The simulation will advance the step when done
   },
-  // Step 15
+  // Step 15: Conclude onboarding and ask next question
   {
     speaker: UserType.AGENT,
-    text: (
-        <div>
-            <p>Supplier 'Brainy Builder Toys Pvt. Ltds' has completed onboarding.</p>
-        </div>
-    ),
-    thinkingTime: 3000,
-    autoContinue: true,
-    updateSupplierStatuses: [{ supplierName: 'Brainy Builder Toys Pvt. Ltds', newStatus: 'Onboarded' }],
+    text: "The suppliers are ready for the next step. Would you like to ask some vetting questions?",
+    options: ["Yes, ask some vetting questions."],
+    thinkingTime: 1000,
   },
   // Step 16
-  {
-    speaker: UserType.AGENT,
-    text: (
-        <div>
-            <p>Supplier 'Gizmo Gurus' has completed onboarding.</p>
-        </div>
-    ),
-    thinkingTime: 2500,
-    autoContinue: true,
-    updateSupplierStatuses: [{ supplierName: 'Gizmo Gurus', newStatus: 'Onboarded' }],
-  },
-  // Step 17
-  {
-    speaker: UserType.AGENT,
-    text: "The suppliers are now onboarded. Would you like to ask some vetting questions?",
-    options: ["Yes, ask some vetting questions."],
-    thinkingTime: 800,
-  },
-  // Step 18
   {
     speaker: UserType.AGENT,
     text: <PreparingQuestionsAnimation />,
@@ -288,7 +264,7 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
     awaitsCompletion: true,
     isThinkingMessage: true,
   },
-  // Step 19
+  // Step 17
   {
     speaker: UserType.AGENT,
     text: (
@@ -305,14 +281,14 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
     options: ["Yes, send them.", "Draft my own instead."],
     thinkingTime: 1000,
   },
-  // Step 20
+  // Step 18
   {
       speaker: UserType.AGENT,
       text: "Okay, sending the questions now.",
       thinkingTime: 800,
       autoContinue: true,
   },
-  // Step 21
+  // Step 19
   {
       speaker: UserType.AGENT,
       text: null, // This will just show the waiting indicator
@@ -320,7 +296,7 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
       waitingTime: 3000,
       autoContinue: true,
   },
-  // Step 22
+  // Step 20
   {
       speaker: UserType.AGENT,
       text: (
@@ -336,20 +312,20 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
       thinkingTime: 500,
       options: ["Ask more", "Show comparison"],
   },
-  // Step 23
+  // Step 21
   {
     speaker: UserType.AGENT,
     text: "Great. Please type your question for a specific supplier (e.g., 'To Brainy Builder Toys Pvt. Ltds: Do you support customized PMS, costs?').",
     thinkingTime: 800,
   },
-  // Step 24
+  // Step 22
   {
     speaker: UserType.AGENT,
     text: "Brainy Builder Toys Pvt. Ltds confirms PMS customization, no added cost, MOQ unchanged.",
     options: ["Show the comparison."],
     thinkingTime: 1200,
   },
-  // Step 25
+  // Step 23
   {
     speaker: UserType.AGENT,
     text: "Supplier profiles have been updated.",
@@ -357,7 +333,7 @@ export const CONVERSATION_SCRIPT: ConversationStep[] = [
     contextView: ContextView.SUPPLIER_COMPARISON,
     autoContinue: true,
   },
-  // Step 26 (Evaluation)
+  // Step 24 (Evaluation)
   {
     speaker: UserType.AGENT,
     text: (

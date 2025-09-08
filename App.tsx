@@ -50,6 +50,37 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, { ...message, id: prev.length }]);
   };
 
+  const simulateOnboarding = async (suppliers: string[]) => {
+      setIsAgentWaiting(true);
+
+      // Set status to "Sending Invite..." for all at once for initial feedback
+      setSupplierStatuses(prev => {
+          const newStatuses = { ...prev };
+          suppliers.forEach(name => { newStatuses[name] = 'Sending Invite...'; });
+          return newStatuses;
+      });
+
+      const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+      await delay(1500); // Initial delay after "Sending Invite..." status is set
+
+      for (let i = 0; i < suppliers.length; i++) {
+          await delay(2000 + Math.random() * 1500);
+          const supplierName = suppliers[i];
+          
+          setSupplierStatuses(prev => ({ ...prev, [supplierName]: 'Agreement Ready' }));
+
+          addMessage({
+              user: UserType.AGENT,
+              text: `${supplierName} is now ${i > 0 ? 'also ' : ''}agreement ready.`,
+          });
+      }
+
+      setIsAgentWaiting(false);
+      
+      // Simulation is done, move to the next step in the script
+      setCurrentStep(currentStep + 1);
+  };
+
   useEffect(() => {
     let waitingTimerId: ReturnType<typeof setTimeout> | undefined;
     if (currentStep >= CONVERSATION_SCRIPT.length) return;
@@ -75,6 +106,21 @@ const App: React.FC = () => {
             return newSet;
         });
     }
+    
+    // Handle custom actions that don't require agent thinking time first
+    if (step.customAction === 'SIMULATE_ONBOARDING') {
+        const externalSuppliers = QUALIFIED_SUPPLIERS
+            .filter(s => selectedSuppliers.has(s.name) && s.status !== 'Onboarded')
+            .map(s => s.name);
+
+        if (externalSuppliers.length > 0) {
+            simulateOnboarding(externalSuppliers);
+        } else {
+            // No external suppliers to onboard, just skip to the next step.
+            setCurrentStep(currentStep + 1);
+        }
+        return; // Return early to prevent other logic from running for this special step
+    }
 
     if (step.speaker === UserType.AGENT || step.speaker === UserType.AMBER || step.speaker === UserType.SUPPLIER) {
       setIsAgentThinking(true);
@@ -84,16 +130,6 @@ const App: React.FC = () => {
 
       const thinkingTimerId = setTimeout(() => {
         setIsAgentThinking(false);
-
-        if (step.updateSupplierStatuses) {
-            setSupplierStatuses(prevStatuses => {
-                const newStatuses = { ...prevStatuses };
-                step.updateSupplierStatuses!.forEach(update => {
-                    newStatuses[update.supplierName] = update.newStatus;
-                });
-                return newStatuses;
-            });
-        }
         
         // Handle custom actions immediately after thinking, regardless of waiting time.
         if (step.customAction === 'AGREEMENT_ACCEPTED') {
@@ -295,17 +331,48 @@ const App: React.FC = () => {
         }
     }
     
-    if (response === 'Create Award') {
+    if (response === 'Create Award' || response === '/beacon Initiate Award') {
+      // If triggered from the initial screen, start the step-by-step creation flow.
+      if (contextView === ContextView.INITIAL || response === '/beacon Initiate Award') {
+          const awardFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => 
+              step.speaker === UserType.AGENT &&
+              typeof step.text === 'string' &&
+              step.text.startsWith("Great! Let’s create the award.")
+          );
+
+          if (awardFlowStartIndex !== -1) {
+              addMessage({ user: UserType.USER, text: response });
+              setUserOptions([]);
+              setShowImageUpload(false);
+              const brandName = rfqSupplier || '';
+              const awardName = brandName ? `${brandName} Award - ${new Date().getFullYear()}` : 'New Award';
+              const startDate = new Date();
+              startDate.setDate(1);
+              startDate.setMonth(startDate.getMonth() + 1);
+              const endDate = new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate() -1);
+
+              setAwardDetails({
+                  brand: brandName,
+                  awardName: awardName,
+                  startDate: startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'}),
+                  endDate: endDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'}),
+              });
+              setChatContextTitle(`Collab - Award : ${awardName}`);
+              setIsReviewFlow(false);
+              setCurrentStep(awardFlowStartIndex);
+              return;
+          }
+      } else {
+        // If triggered from the RFQ flow, start the pre-filled review flow.
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
         setShowImageUpload(false);
     
-        // Populate award details dynamically from RFQ results or use defaults
         const supplierInfo = rfqSupplier ? DETAILED_SUPPLIER_INFO[rfqSupplier] : null;
         const vendorNumber = supplierInfo?.companyDetails['Supplier #'];
 
         const detailsToSet: AwardDetails = {
-            ...REVIEW_AWARD_DETAILS, // Use as a template for items etc.
+            ...REVIEW_AWARD_DETAILS,
             brand: rfqSupplier || REVIEW_AWARD_DETAILS.brand,
             vendorNumber: (vendorNumber && vendorNumber !== 'N/A') ? vendorNumber : REVIEW_AWARD_DETAILS.vendorNumber,
             awardName: `${rfqSupplier || REVIEW_AWARD_DETAILS.brand} Award - ${new Date().getFullYear()}`,
@@ -315,7 +382,6 @@ const App: React.FC = () => {
         setChatContextTitle(`Collab - Award : ${detailsToSet.awardName!}`);
         setIsReviewFlow(true);
         
-        // Set view to AWARD_CREATION to trigger the loading animation for the review flow
         setContextView(ContextView.AWARD_CREATION); 
         
         const reviewFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => step.customAction === 'START_REVIEW_FLOW');
@@ -323,9 +389,10 @@ const App: React.FC = () => {
             setCurrentStep(reviewFlowStartIndex);
         }
         return;
+      }
     }
     
-    if (response === 'Confirm and send PO') {
+    if (response === 'Confirm and Create PO') {
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
         setShowImageUpload(false);
@@ -367,38 +434,6 @@ const App: React.FC = () => {
             setCurrentStep(awardFlowStartIndex);
         }
         return;
-    }
-    
-    // Handle starting the award flow directly
-    if (response === 'Initiate new Award' || response === '/beacon Initiate Award') {
-      const awardFlowStartIndex = CONVERSATION_SCRIPT.findIndex(step => 
-          step.speaker === UserType.AGENT &&
-          typeof step.text === 'string' &&
-          step.text.startsWith("Great! Let’s create the award.")
-      );
-
-      if (awardFlowStartIndex !== -1) {
-        addMessage({ user: UserType.USER, text: response });
-        setUserOptions([]);
-        setShowImageUpload(false);
-        const brandName = rfqSupplier || '';
-        const awardName = brandName ? `${brandName} Award - ${new Date().getFullYear()}` : 'New Award';
-        const startDate = new Date();
-        startDate.setDate(1);
-        startDate.setMonth(startDate.getMonth() + 1);
-        const endDate = new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate() -1);
-
-        setAwardDetails({
-            brand: brandName,
-            awardName: awardName,
-            startDate: startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'}),
-            endDate: endDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'}),
-        });
-        setChatContextTitle(`Collab - Award : ${awardName}`);
-        setIsReviewFlow(false);
-        setCurrentStep(awardFlowStartIndex);
-        return; // Stop further execution
-      }
     }
     
     if (response === 'Return to Dashboard') {
@@ -491,26 +526,6 @@ const App: React.FC = () => {
             setContextView(ContextView.AWARD_SUMMARY); // Immediately switch view to prevent wrong loader
             setCurrentStep(awardFlowStartIndex);
         }
-        return; 
-    }
-
-    if (currentStep === 12 && response === "Yes, send them.") {
-        setIsAgentSending(true);
-        const newStatuses = { ...supplierStatuses };
-        QUALIFIED_SUPPLIERS.forEach(supplier => { if (selectedSuppliers.has(supplier.name) && supplier.status !== 'Onboarded') newStatuses[supplier.name] = 'Sending Invite...'; });
-        setSupplierStatuses(newStatuses);
-        const nextStepDelay = CONVERSATION_SCRIPT[currentStep + 1]?.thinkingTime || 2000;
-        
-        setTimeout(() => {
-            setIsAgentSending(false);
-            setSupplierStatuses(prevStatuses => {
-                const finalStatuses = { ...prevStatuses };
-                Object.keys(finalStatuses).forEach(name => { if (finalStatuses[name] === 'Sending Invite...') finalStatuses[name] = 'Invited'; });
-                return finalStatuses;
-            });
-            const nextStepIndex = currentStep + 1;
-            if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
-        }, nextStepDelay);
         return; 
     }
 

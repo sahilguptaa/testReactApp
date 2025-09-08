@@ -53,8 +53,7 @@ export interface ConversationStep {
   autoContinue?: boolean;
   isThinkingMessage?: boolean;
   awaitsCompletion?: boolean;
-  // FIX: Broaden the type for `customAction` to allow for different flow control actions.
-  customAction?: 'START_REVIEW_FLOW' | 'AWARD_ACCEPTED_PROCEED_TO_PO' | 'AGREEMENT_ACCEPTED' | 'RFQ_RESPONSE_RECEIVED';
+  customAction?: 'START_REVIEW_FLOW' | 'AWARD_ACCEPTED_PROCEED_TO_PO' | 'AGREEMENT_ACCEPTED' | 'RFQ_RESPONSE_RECEIVED' | 'SIMULATE_ONBOARDING';
   formSection?: 'initial' | 'hierarchy' | 'terms' | 'clauses' | 'items';
   simulateSupplierResponse?: boolean;
   updateSupplierStatuses?: { supplierName: string; newStatus: string }[];
