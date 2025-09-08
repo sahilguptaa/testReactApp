@@ -16,7 +16,7 @@ export const ThinkingIndicator: React.FC = () => {
       <div className="px-4 py-3 rounded-2xl max-w-lg text-sm bg-gray-100 text-slate-800 rounded-bl-none border border-dashed border-slate-300">
         <div className="flex items-center text-slate-600 font-medium text-xs">
             <span>💬</span>
-            <span className="ml-1.5">Beacon Thinking...</span>
+            <span className="ml-1.5">Collab is thinking...</span>
         </div>
         <div className="text-slate-500 mt-1">
           Processing your input...

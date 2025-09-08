@@ -1,7 +1,4 @@
 
-
-
-
 import React from 'react';
 import { ConversationStep, UserType, ContextView, Supplier } from './types';
 import { AgentTaskView } from './components/AgentTaskView';
@@ -12,6 +9,7 @@ import { ReviewAwardAnimation } from './features/award/components/animations/Rev
 import { AddingParticipantAnimation } from './components/AddingParticipantAnimation';
 import { PreparingQuestionsAnimation } from './components/PreparingQuestionsAnimation';
 import { SendingRFQAnimation } from './components/SendingRFQAnimation';
+import { SendingAgreementAnimation } from './components/SendingAgreementAnimation';
 
 export const USER_PROFILE_IMAGE_URL = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
 export const AMBER_PROFILE_IMAGE_URL = "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80";
@@ -356,12 +354,34 @@ const baseScript: ConversationStep[] = [
                 <li><span className="font-semibold">Brainy Builder Toys Pvt. Ltds — 88/100:</span> Good price, verified compliance, customization. Weakness: lower capacity.</li>
                 <li><span className="font-semibold">Gizmo Gurus — (N/A):</span> External supplier, best pricing, but compliance is only claimed, not verified.</li>
             </ul>
-            <p className="mt-2">Ready to proceed with an RFQ to the shortlisted suppliers?</p>
+            <p className="mt-2">Do you want to send an agreement to the selected supplier?</p>
         </div>
     ),
     thinkingTime: 1400,
     autoContinue: false,
-    options: ["Yes, proceed to RFQ"],
+    options: ["Yes, send agreement"],
+  },
+  // Agreement Flow
+  {
+    speaker: UserType.AGENT,
+    text: <SendingAgreementAnimation />,
+    thinkingTime: 1000,
+    isThinkingMessage: true,
+    awaitsCompletion: true,
+  },
+  {
+    speaker: UserType.AGENT,
+    text: "Great, the agreement has been sent. Now waiting for the supplier to review and accept.",
+    waitingTime: 4000,
+    autoContinue: true,
+    customAction: 'AGREEMENT_ACCEPTED'
+  },
+  {
+    speaker: UserType.AGENT,
+    text: null,
+    dynamicText: 'agreementAccepted',
+    thinkingTime: 1000,
+    autoContinue: true,
   },
   // RFQ Flow
   {

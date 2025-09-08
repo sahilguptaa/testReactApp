@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { ContextView, AwardDetails } from '../types';
 import { QUALIFIED_SUPPLIERS } from '../constants';
@@ -42,6 +41,7 @@ interface ContextPanelProps {
   isVettingStarted?: boolean;
   rfqSupplier: string | null;
   onSelectRfqSupplier: (supplierName: string) => void;
+  isAgreementSent?: boolean;
 }
 
 const viewMap: Record<ContextView, React.ComponentType<any>> = {
@@ -101,6 +101,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
   isVettingStarted,
   rfqSupplier,
   onSelectRfqSupplier,
+  isAgreementSent,
 }) => {
   const CurrentView = viewMap[view] || InitialView;
 
@@ -152,6 +153,7 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({
     viewProps.shortlistedSuppliers = selectedSuppliers;
     viewProps.rfqSupplier = rfqSupplier;
     viewProps.onSelectRfqSupplier = onSelectRfqSupplier;
+    viewProps.isAgreementSent = isAgreementSent;
   } else if (view === ContextView.RFQ_FORM) {
       viewProps.supplierName = rfqSupplier;
   } else if (view === ContextView.AWARD_CREATION) {

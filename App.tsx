@@ -11,6 +11,7 @@ import { ResizableHandle } from './components/ResizableHandle';
 import { AwardPDFCreationAnimation } from './features/award/components/animations/AwardPDFCreationAnimation';
 import { ReviewAwardAnimation } from './features/award/components/animations/ReviewAwardAnimation';
 import { REVIEW_AWARD_DETAILS } from './features/award/awardConstants';
+import { SendingAgreementAnimation } from './components/SendingAgreementAnimation';
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -32,6 +33,8 @@ const App: React.FC = () => {
   const [isRfqSent, setIsRfqSent] = useState(false);
   const [isVettingStarted, setIsVettingStarted] = useState(false);
   const [rfqSupplier, setRfqSupplier] = useState<string | null>(null);
+  const [isAgreementSent, setIsAgreementSent] = useState(false);
+  const [isAgreementAccepted, setIsAgreementAccepted] = useState(false);
   const [chatContextTitle, setChatContextTitle] = useState('Collab');
 
 
@@ -97,7 +100,10 @@ const App: React.FC = () => {
             );
         } else if (step.dynamicText === 'rfqFormHeader') {
             messageText = `Great. I've prepared the RFQ form for ${rfqSupplier} based on our intake details. Please review it on the left and submit when you're ready.`;
+        } else if (step.dynamicText === 'agreementAccepted') {
+            messageText = `Agreement with ${rfqSupplier} has been accepted! We can now proceed with the RFQ.`;
         }
+
 
         if (step.awaitsCompletion && React.isValidElement(step.text)) {
             let onCompleteHandler = () => {
@@ -151,6 +157,9 @@ const App: React.FC = () => {
             setIsAgentWaiting(true);
             waitingTimerId = setTimeout(() => {
                 setIsAgentWaiting(false);
+                if (step.customAction === 'AGREEMENT_ACCEPTED') {
+                    setIsAgreementAccepted(true);
+                }
                 proceed();
             }, step.waitingTime);
         } else {
@@ -231,6 +240,26 @@ const App: React.FC = () => {
           // Fallback just in case
           const nextStepIndex = currentStep + 1;
           if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
+        }
+        return;
+    }
+
+    if (response === 'Yes, send agreement') {
+        if (!rfqSupplier) {
+            addMessage({ user: UserType.AGENT, text: "Please select one supplier from the comparison view before sending an agreement." });
+            return;
+        }
+        addMessage({ user: UserType.USER, text: response });
+        setUserOptions([]);
+        setIsAgreementSent(true);
+        const sendingStepIndex = CONVERSATION_SCRIPT.findIndex(step =>
+            React.isValidElement(step.text) && step.text.type === SendingAgreementAnimation
+        );
+        if (sendingStepIndex !== -1) {
+            setCurrentStep(sendingStepIndex);
+        } else {
+            const nextStepIndex = currentStep + 1;
+            if (nextStepIndex < CONVERSATION_SCRIPT.length) setCurrentStep(nextStepIndex);
         }
         return;
     }
@@ -330,7 +359,7 @@ const App: React.FC = () => {
         }
     }
     
-    if (response === 'Submit RFQ') {
+    if (response === 'Send RFQ') {
         setIsRfqSent(true);
         addMessage({ user: UserType.USER, text: response });
         setUserOptions([]);
@@ -511,6 +540,8 @@ const App: React.FC = () => {
     setIsRfqSent(false);
     setIsVettingStarted(false);
     setRfqSupplier(null);
+    setIsAgreementSent(false);
+    setIsAgreementAccepted(false);
     setChatContextTitle('Collab');
     // Setting step to 0 will re-trigger the initial message via useEffect
     setCurrentStep(0); 
@@ -576,6 +607,7 @@ const App: React.FC = () => {
               isVettingStarted={isVettingStarted}
               rfqSupplier={rfqSupplier}
               onSelectRfqSupplier={handleSelectRfqSupplier}
+              isAgreementSent={isAgreementSent}
             />
           </div>
           

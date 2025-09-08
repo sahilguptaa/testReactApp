@@ -96,21 +96,9 @@ export const InitialView: React.FC<{ onActionClick: (action: string) => void; }>
     return (
         <div className="h-full bg-slate-50">
             <div className="p-8">
-                <div className="flex items-center space-x-4">
-                            <div className="w-16 h-16 rounded-full bg-walmart-darkblue flex items-center justify-center flex-shrink-0">
-           <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 8V4H8"></path>
-                <rect width="16" height="12" x="4" y="8" rx="2"></rect>
-                <path d="M2 14h2"></path>
-                <path d="M20 14h2"></path>
-                <path d="M15 13v2"></path>
-                <path d="M9 13v2"></path>
-            </svg>
-        </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-slate-800">Beacon AI Assistant</h1>
-                        <p className="text-slate-600">{greeting}, Jony. I'm here to help you streamline your sourcing process.</p>
-                    </div>
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800">{greeting}, Jony.</h1>
+                    <p className="text-slate-600 mt-1">I'm here to help you streamline your sourcing process.</p>
                 </div>
 
                 <div className="mt-10">

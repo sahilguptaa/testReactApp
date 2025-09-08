@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserType } from '../types';
 import { USER_PROFILES } from '../constants';
@@ -51,9 +52,11 @@ export const Message: React.FC<MessageProps> = ({ user, text, isThinkingMessage 
             isThinking ? 'border border-dashed border-slate-300' : 'shadow-sm'
           }`}
         >
-          <div className={`font-semibold mb-1 text-xs ${nameColor}`}>
-            {profile.name}
-          </div>
+          {!isAgent && (
+            <div className={`font-semibold mb-1 text-xs ${nameColor}`}>
+              {profile.name}
+            </div>
+          )}
           {text}
         </div>
       </div>

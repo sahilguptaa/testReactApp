@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useRef, useEffect } from 'react';
 import { Message as MessageType, UserType } from '../types';
 import { Message } from './Message';
@@ -56,9 +53,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Chat Header */}
-      <div className="p-4 border-b border-slate-200 bg-slate-50">
-        <h2 className="text-lg font-semibold text-slate-800">{contextTitle}</h2>
+      <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center space-x-3">
+        <div className="w-10 h-10 rounded-full bg-walmart-darkblue flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 8V4H8"></path>
+                <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+                <path d="M2 14h2"></path>
+                <path d="M20 14h2"></path>
+                <path d="M15 13v2"></path>
+                <path d="M9 13v2"></path>
+            </svg>
+        </div>
+        <div>
+            <h2 className="text-lg font-semibold text-slate-800">{contextTitle}</h2>
+            <p className="text-sm text-slate-500">Your AI assistant</p>
+        </div>
       </div>
+
 
       {/* Participants Row */}
       <div className="px-4 py-3 border-b border-slate-200 flex items-center space-x-6">

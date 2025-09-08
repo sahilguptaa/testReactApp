@@ -55,7 +55,7 @@ export const RFQForm: React.FC<RFQFormProps> = ({ supplierName }) => {
             value="Must be less than 1.5% on initial production runs." 
         />
         <div className="pt-4 text-center text-sm text-slate-500">
-            <p>Click "Submit RFQ" in the chat to send this request to the selected supplier.</p>
+            <p>Click "Send RFQ" in the chat to send this request to the selected supplier.</p>
         </div>
       </div>
     </div>

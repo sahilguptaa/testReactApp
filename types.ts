@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { AwardDetails } from './features/award/awardTypes';
 
@@ -52,9 +53,9 @@ export interface ConversationStep {
   isThinkingMessage?: boolean;
   awaitsCompletion?: boolean;
   // FIX: Broaden the type for `customAction` to allow for different flow control actions.
-  customAction?: 'START_REVIEW_FLOW' | 'AWARD_ACCEPTED_PROCEED_TO_PO';
+  customAction?: 'START_REVIEW_FLOW' | 'AWARD_ACCEPTED_PROCEED_TO_PO' | 'AGREEMENT_ACCEPTED';
   formSection?: 'initial' | 'hierarchy' | 'terms' | 'clauses' | 'items';
   simulateSupplierResponse?: boolean;
   updateSupplierStatuses?: { supplierName: string; newStatus: string }[];
-  dynamicText?: 'awardCongrats' | 'rfqFormHeader';
+  dynamicText?: 'awardCongrats' | 'rfqFormHeader' | 'agreementAccepted';
 }

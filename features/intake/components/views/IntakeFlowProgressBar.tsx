@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { ContextView } from '../../../../types';
 
@@ -10,33 +9,33 @@ interface IntakeFlowProgressBarProps {
 }
 
 export const IntakeFlowProgressBar: React.FC<IntakeFlowProgressBarProps> = ({ currentView, isRfqSent, isVettingStarted }) => {
-    const intakeSteps = ['Intake Form', 'Supplier Search', 'Onboarding', 'Vetting', 'Request for Quote'];
+    const intakeSteps = ['Intake Form', 'Supplier Search', 'Onboarding', 'Vetting', 'Agreement', 'Request for Quote'];
 
     const getStatus = (stepIndex: number): 'complete' | 'active' | 'pending' => {
-        if (isRfqSent) {
-            return 'complete';
+        let activeStep = 0;
+
+        switch (currentView) {
+            case ContextView.DRAFT_INTAKE_FORM:
+                activeStep = 0;
+                break;
+            case ContextView.FINAL_INTAKE_FORM:
+            case ContextView.SUPPLIER_SHORTLIST:
+                activeStep = 1;
+                break;
+            case ContextView.SUPPLIER_DASHBOARD:
+                activeStep = isVettingStarted ? 3 : 2;
+                break;
+            case ContextView.SUPPLIER_COMPARISON:
+                activeStep = 4;
+                break;
+            case ContextView.RFQ_FORM:
+                activeStep = 5;
+                break;
         }
 
-        const viewToStep: Partial<Record<ContextView, number>> = {
-            [ContextView.DRAFT_INTAKE_FORM]: 0,
-            [ContextView.FINAL_INTAKE_FORM]: 1,
-            [ContextView.SUPPLIER_SHORTLIST]: 1,
-            [ContextView.SUPPLIER_DASHBOARD]: 2,
-            [ContextView.SUPPLIER_COMPARISON]: 4,
-            [ContextView.RFQ_FORM]: 4,
-        };
-
-        let activeIndex = viewToStep[currentView] ?? -1;
-        
-        if (currentView === ContextView.SUPPLIER_DASHBOARD && isVettingStarted) {
-            activeIndex = 3;
-        }
-        
-        if (activeIndex === -1) return 'pending';
-        
-        if (stepIndex < activeIndex) return 'complete';
-        if (stepIndex === activeIndex) return 'active';
-        
+        if (isRfqSent) return 'complete';
+        if (stepIndex < activeStep) return 'complete';
+        if (stepIndex === activeStep) return 'active';
         return 'pending';
     };
     

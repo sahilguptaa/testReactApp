@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { DETAILED_SUPPLIER_INFO } from '../../constants';
 
@@ -7,6 +6,7 @@ interface SupplierComparisonProps {
   shortlistedSuppliers: Set<string>;
   rfqSupplier: string | null;
   onSelectRfqSupplier: (name: string) => void;
+  isAgreementSent?: boolean;
 }
 
 const PanelHeader: React.FC<{ title: string, subtitle: string }> = ({ title, subtitle }) => (
@@ -31,7 +31,7 @@ const icons = {
   globe: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.527-1.973c.418-.165.845-.27 1.298-.331a6.002 6.002 0 01-1.912 2.706C13.488 9.27 13.026 9 12.5 9a1.5 1.5 0 01-1.5-1.5V7a2 2 0 00-4 0 2 2 0 01-1.527 1.973 6.002 6.002 0 01-2.14-2.946z" clipRule="evenodd" /></svg>,
   dollar: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.5 2.5 0 00-1.168-.217c-.32.006-.576.044-.78.114.268.39.605.772.973 1.152.32.338.608.648.829.934.221-.286.509-.596.829-.934.368-.38.705-.762.973-1.152-.204-.07-.46-.108-.78-.114a2.5 2.5 0 00-1.168.217V7.151c.221.07.412.164.567.267C12.338 7.16 14 8.36 14 10c0 .993-.564 1.834-1.395 2.404C13.564 12.834 14 13.675 14 14.5c0 .993-.564 1.834-1.395 2.404-.831.57-1.928.946-3.105.946-.237 0-.479-.01-.715-.029a1 1 0 00-1.14 1.053 8.001 8.001 0 100-15.906 1 1 0 001.14 1.053c.236-.019.478-.029.715-.029 1.177 0 2.274.376 3.105.946C13.436 8.166 14 9.007 14 10c0-.993-.564-1.834-1.395-2.404C11.69 7.166 10.16 6 8.5 6c-1.66 0-3.19.166-4.105.596C3.564 7.166 3 8.007 3 9c0 .993.564 1.834 1.395 2.404C3.564 11.834 3 12.675 3 13.5c0 .993.564 1.834 1.395 2.404.831.57 1.928.946 3.105.946.237 0 .479-.01.715-.029a1 1 0 001.14-1.053 8.001 8.001 0 00-9.424-9.424 1 1 0 001.053 1.14c.02.236.029.478.029.715 0 1.177.376 2.274.946 3.105C6.166 13.436 7.007 14 8 14c.993 0 1.834-.564 2.404-1.395C10.834 11.564 11 10.675 11 10.5c0-.993.564-1.834 1.395-2.404C12.834 7.564 13 6.675 13 6.5c0-.993-.564-1.834-1.395-2.404C10.774 3.564 9.675 3 8.5 3c-.993 0-1.834.564-2.404 1.395C5.666 5.334 5.5 6.225 5.5 6.5c0 .175.066.325.114.458-.268-.39-.605-.772-.973-1.152-.32-.338-.608-.648-.829-.934C4.037 4.586 4.006 4.29 4.006 4c0-1.64 1.66-3 3.494-3S11 2.36 11 4c0 .29-.03.586-.088.872.221.286.509.596.829.934.368.38.705.762.973 1.152.048-.133.114-.283.114-.458z" /></svg>,
   adSpend: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12 1.5a.5.5 0 01.5.5v11.793l3.146-3.147a.5.5 0 01.708.708l-4 4a.5.5 0 01-.708 0l-4-4a.5.5 0 11.708-.708L11.5 13.793V2a.5.5 0 01.5-.5z" clipRule="evenodd" /></svg>,
-  growth: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 18.5a.5.5 0 01-.5-.5V6.207l-3.146 3.147a.5.5 0 01-.708-.708l4-4a.5.5 0 01.708 0l4 4a.5.5 0 01-.708.708L8.5 6.207V18a.5.5 0 01-.5.5z" clipRule="evenodd" /></svg>,
+  growth: <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 18.5a.5.5 0 01-.5-.5V6.207l-3.146 3.147a.5.5 0 01-.708-.708l4-4a.5.5 0 01.708 0l4 4a.5.5 0 01-.708.708L8.5 6.207V18a.5.5 0 01-.5-.5z" clipRule="evenodd" /></svg>,
 };
 
 const getDetailIcon = (label: string) => {
@@ -54,14 +54,14 @@ const DetailItem: React.FC<{ label: string; value: string; isHighlighted?: boole
     </div>
 );
 
-const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => void; }> = ({ data, isSelected, onSelect }) => {
+const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => void; disabled?: boolean; }> = ({ data, isSelected, onSelect, disabled }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const riskColor = data.risk === 'Low' ? 'bg-green-100 text-green-800' : data.risk === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800';
 
     return (
         <div 
-            onClick={onSelect}
-            className={`bg-white rounded-xl shadow-md border ${isSelected ? 'border-walmart-blue ring-2 ring-walmart-blue' : 'border-slate-200'} flex flex-col font-sans transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer`}>
+            onClick={!disabled ? onSelect : undefined}
+            className={`bg-white rounded-xl shadow-md border ${isSelected ? 'border-walmart-blue ring-2 ring-walmart-blue' : 'border-slate-200'} flex flex-col font-sans transition-all duration-300 ${disabled ? 'opacity-75 cursor-not-allowed' : 'hover:shadow-xl hover:-translate-y-1 cursor-pointer'}`}>
             <div className="p-4">
                 <div className="flex justify-between items-start">
                     <h3 className="text-lg font-bold text-slate-800">{data.name}</h3>
@@ -69,6 +69,7 @@ const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => v
                         type="checkbox"
                         checked={isSelected}
                         readOnly
+                        disabled={disabled}
                         className="h-5 w-5 rounded border-slate-300 text-walmart-blue focus:ring-walmart-blue pointer-events-none"
                     />
                 </div>
@@ -142,7 +143,7 @@ const SupplierCard: React.FC<{ data: any; isSelected: boolean; onSelect: () => v
     );
 };
 
-export const SupplierComparison: React.FC<SupplierComparisonProps> = ({ shortlistedSuppliers, rfqSupplier, onSelectRfqSupplier }) => {
+export const SupplierComparison: React.FC<SupplierComparisonProps> = ({ shortlistedSuppliers, rfqSupplier, onSelectRfqSupplier, isAgreementSent }) => {
   const suppliersToCompare = Array.from(shortlistedSuppliers);
 
   if (suppliersToCompare.length === 0) {
@@ -158,7 +159,7 @@ export const SupplierComparison: React.FC<SupplierComparisonProps> = ({ shortlis
 
   return (
     <div className="h-full bg-slate-50">
-      <PanelHeader title="Supplier Comparison" subtitle="Select a supplier to proceed with an RFQ." />
+      <PanelHeader title="Supplier Comparison" subtitle={isAgreementSent ? "Agreement sent. Selection is locked." : "Select a supplier to proceed."} />
       <div className="p-6 grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
         {suppliersToCompare.map(supplierName => {
           const supplierData = DETAILED_SUPPLIER_INFO[supplierName];
@@ -171,6 +172,7 @@ export const SupplierComparison: React.FC<SupplierComparisonProps> = ({ shortlis
                     data={{name: supplierName, ...supplierData}} 
                     isSelected={rfqSupplier === supplierName}
                     onSelect={() => onSelectRfqSupplier(supplierName)}
+                    disabled={isAgreementSent}
                  />;
         })}
       </div>
